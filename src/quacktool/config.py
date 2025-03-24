@@ -100,12 +100,15 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
         quacktool_config = getattr(quack_config.custom, "quacktool", {})
 
     # Get the log level from quacktool_config
-    log_level_name = quacktool_config.get("log_level", "INFO") if isinstance(
-        quacktool_config, dict) else getattr(quacktool_config, "log_level", "INFO")
+    log_level_name = (
+        quacktool_config.get("log_level", "INFO")
+        if isinstance(quacktool_config, dict)
+        else getattr(quacktool_config, "log_level", "INFO")
+    )
     log_level = getattr(logging, log_level_name, logging.INFO)
 
     # When running tests, use minimal logging configuration to avoid file handle issues
-    if 'PYTEST_CURRENT_TEST' in os.environ:
+    if "PYTEST_CURRENT_TEST" in os.environ:
         # Just set the log level without file handlers during tests
         logging.basicConfig(level=log_level, force=True)
 
@@ -155,7 +158,7 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
     try:
         log_file = Path(logs_dir) / "quacktool.log"
 
-        file_handler = logging.FileHandler(log_file, mode='a')
+        file_handler = logging.FileHandler(log_file, mode="a")
         file_handler.setLevel(log_level)
         root_logger.addHandler(file_handler)
         _file_handlers.append(file_handler)  # Track for cleanup
@@ -165,6 +168,7 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
         pass
 
     return quack_config
+
 
 # Create a global config object - lazy initialization to avoid
 # resource issues during testing

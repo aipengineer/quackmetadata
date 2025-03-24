@@ -17,7 +17,9 @@ __version__ = "0.1.0"
 T = TypeVar("T")
 
 
-def display_version_info(ctx: Any | None = None, param: Any | None = None, value: bool | None = None) -> None:
+def display_version_info(
+    ctx: Any | None = None, param: Any | None = None, value: bool | None = None
+) -> None:
     """
     Display detailed version information when --version is used.
 
@@ -27,7 +29,9 @@ def display_version_info(ctx: Any | None = None, param: Any | None = None, value
         value: Whether the option is provided
     """
     # Early return if value is False or None, or if resilient_parsing is enabled
-    if not value or (ctx and hasattr(ctx, "resilient_parsing") and ctx.resilient_parsing):
+    if not value or (
+        ctx and hasattr(ctx, "resilient_parsing") and ctx.resilient_parsing
+    ):
         return
 
     try:
@@ -40,7 +44,8 @@ def display_version_info(ctx: Any | None = None, param: Any | None = None, value
         param_name = getattr(param, "name", "version") if param else "version"
 
         console.print(
-            "\n[bold green]QuackTool[/bold green] - A QuackVerse Automation Tool")
+            "\n[bold green]QuackTool[/bold green] - A QuackVerse Automation Tool"
+        )
         console.print(f"Version: [cyan]{__version__}[/cyan]")
         console.print(f"QuackCore Version: [cyan]{quackcore.__version__}[/cyan]")
         console.print(f"Python Version: [cyan]{platform.python_version()}[/cyan]")

@@ -43,6 +43,7 @@ class ProcessingMode(str, Enum):
         """Get all enum values as a list."""
         return list(cls.__values)
 
+
 class ProcessingOptions(BaseModel):
     """Options for asset processing."""
 
@@ -113,17 +114,17 @@ class AssetConfig(BaseModel):
     def validate_input_path(cls, v: Path) -> Path:
         """Validate that input path exists."""
         # For test environments, create a dummy file if it doesn't exist
-        if 'PYTEST_CURRENT_TEST' in os.environ and not v.exists():
+        if "PYTEST_CURRENT_TEST" in os.environ and not v.exists():
             try:
                 # In tests, try to create parent directories and touch the file
                 v.parent.mkdir(parents=True, exist_ok=True)
-                with open(v, 'w') as f:
+                with open(v, "w") as f:
                     f.write("Test file content")
             except (OSError, PermissionError):
                 # If we can't create the file (e.g., in a read-only filesystem or in paths we don't have access to),
                 # we'll just skip validation during tests
                 return v
-        elif not v.exists() and 'PYTEST_CURRENT_TEST' not in os.environ:
+        elif not v.exists() and "PYTEST_CURRENT_TEST" not in os.environ:
             raise ValueError(f"Input path does not exist: {v}")
         return v
 
