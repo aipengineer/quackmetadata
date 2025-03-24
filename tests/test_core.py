@@ -15,7 +15,7 @@ from quacktool.core import (
     _process_by_type_and_mode,
     process_asset,
 )
-from quacktool.models import AssetConfig, AssetType, ProcessingMode, ProcessingOptions
+from quacktool.models import AssetConfig, AssetType
 
 
 class TestAssetTypeDetection:
@@ -191,6 +191,7 @@ class TestProcessAsset:
         assert "not found" in result.error if result.error else ""
         assert result.duration_ms >= 1
 
+
     @mock.patch("quacktool.core._process_by_type_and_mode")
     def test_process_asset_error_handling(
             self,
@@ -198,19 +199,26 @@ class TestProcessAsset:
             test_file: Path,
     ) -> None:
         """Test error handling during processing."""
-        # Set up mock to raise an exception
-        mock_process_by_type_and_mode.side_effect = RuntimeError(
-            "Test processing error")
+        # Set up mock for _generate_output_path to avoid config issues
+        with mock.patch("quacktool.core._generate_output_path") as mock_output_path:
+            mock_output_path.return_value = Path("output/test.txt")
 
-        # Create config and call process_asset
-        config = AssetConfig(input_path=test_file)
-        result = process_asset(config)
+            # Set up mock for _detect_asset_type to avoid potential issues
+            with mock.patch("quacktool.core._detect_asset_type") as mock_detect_type:
+                mock_detect_type.return_value = AssetType.IMAGE
 
-        # Verify the result has captured the error
-        assert result.success is False
-        assert "Test processing error" in result.error if result.error else ""
-        assert result.duration_ms >= 1
+                # Set up mock to raise an exception
+                mock_process_by_type_and_mode.side_effect = RuntimeError(
+                    "Test processing error")
 
+                # Create config and call process_asset
+                config = AssetConfig(input_path=test_file)
+                result = process_asset(config)
+
+                # Verify the result has captured the error
+                assert result.success is False
+                assert "Test processing error" in result.error if result.error else ""
+                assert result.duration_ms >= 1
 
 class TestProcessByTypeAndMode:
     """Tests for the process by type and mode functions."""

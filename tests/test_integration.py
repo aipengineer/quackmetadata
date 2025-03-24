@@ -4,7 +4,7 @@ Integration tests for QuackTool.
 
 These tests verify that QuackTool components work together correctly.
 """
-
+import logging
 import os
 from pathlib import Path
 from unittest import mock
@@ -147,7 +147,7 @@ class TestCliIntegration:
             self, mock_process_asset: mock.MagicMock, test_file: Path
     ) -> None:
         """Test that CLI correctly interfaces with core processing."""
-        from quacktool.demo_cli import process_command
+        from quacktool.demo_cli import cli  # Import the CLI group, not the function
         from click.testing import CliRunner
 
         # Set up the mock return value
@@ -158,15 +158,35 @@ class TestCliIntegration:
             duration_ms=42,
         )
 
-        # Run the CLI command
+        # Run the CLI command with proper environment
         runner = CliRunner()
-        with mock.patch("click.Path.convert") as mock_convert:
-            mock_convert.return_value = str(test_file)
-            result = runner.invoke(process_command, [
-                str(test_file),
-                "--mode", "transform",
-                "--quality", "95",
-            ])
+
+        with mock.patch("quackcore.cli.init_cli_env") as mock_init:
+            # Create a proper mock context
+            mock_logger = mock.MagicMock(spec=logging.Logger)
+            mock_config = mock.MagicMock()
+            mock_ctx = mock.MagicMock()
+            mock_ctx.logger = mock_logger
+            mock_ctx.config = mock_config
+            mock_init.return_value = mock_ctx
+
+            # Mock Path.exists to avoid file system checks
+            with mock.patch("pathlib.Path.exists", return_value=True):
+                # Mock the Click path conversion
+                with mock.patch("click.Path.convert") as mock_convert:
+                    mock_convert.return_value = str(test_file)
+
+                    # Run the command using the CLI group with the process command name
+                    result = runner.invoke(cli, [
+                        "process",  # Command name
+                        str(test_file),
+                        "--mode", "transform",
+                        "--quality", "95",
+                    ], obj={
+                        "logger": mock_logger,
+                        "quack_ctx": mock_ctx,
+                        "config": {},
+                    })
 
         # Check that the command succeeded
         assert result.exit_code == 0

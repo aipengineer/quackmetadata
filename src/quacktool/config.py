@@ -79,6 +79,10 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
     Returns:
         QuackConfig object with QuackTool-specific configuration
     """
+    # Reset global config to ensure a fresh load
+    global _config
+    _config = None
+
     # Load configuration from file or defaults
     quack_config = load_config(config_path)
 
@@ -104,6 +108,13 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
     if 'PYTEST_CURRENT_TEST' in os.environ:
         # Just set the log level without file handlers during tests
         logging.basicConfig(level=log_level, force=True)
+
+        # Get logs directory - correct approach for PathsConfig
+        logs_dir = "./logs"  # Default value
+
+        # Create directory for tests
+        Path(logs_dir).mkdir(parents=True, exist_ok=True)
+
         return quack_config
 
     # In normal operation, use full logging configuration
@@ -129,10 +140,19 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
 
     # Get log file path from config or use default
     global _file_handlers
-    logs_dir = quack_config.paths.get("logs_dir", "./logs")
+
+    # Access the logs_dir properly - PathsConfig doesn't have a get method
+    # Use direct attribute access with a default fallback
+    logs_dir = "./logs"  # Default fallback
+
+    # If we have a 'logs_dir' attribute directly in paths, use it
+    if hasattr(quack_config.paths, "logs_dir"):
+        logs_dir = quack_config.paths.logs_dir
+
+    # Always ensure the directory exists
+    Path(logs_dir).mkdir(parents=True, exist_ok=True)
 
     try:
-        Path(logs_dir).mkdir(parents=True, exist_ok=True)
         log_file = Path(logs_dir) / "quacktool.log"
 
         file_handler = logging.FileHandler(log_file, mode='a')
@@ -145,7 +165,6 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
         pass
 
     return quack_config
-
 
 # Create a global config object - lazy initialization to avoid
 # resource issues during testing

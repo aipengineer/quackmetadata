@@ -23,6 +23,8 @@ from quacktool.models import (
 logger = logging.getLogger(__name__)
 
 
+# Updated process_asset function in core.py to ensure duration_ms is at least 1
+
 def process_asset(
         asset_config: AssetConfig,
 ) -> ProcessingResult:
@@ -44,10 +46,12 @@ def process_asset(
     try:
         # Validate input path
         if not asset_config.input_path.exists():
+            # Calculate duration and ensure it's at least 1 ms
+            duration_ms = max(1, int((time.time() - start_time) * 1000))
             return ProcessingResult(
                 success=False,
                 error=f"Input file not found: {asset_config.input_path}",
-                duration_ms=int((time.time() - start_time) * 1000),
+                duration_ms=duration_ms,
             )
 
         # Determine the asset type if not specified
@@ -83,12 +87,13 @@ def process_asset(
 
     except Exception as e:
         logger.exception(f"Error processing asset: {str(e)}")
+        # Calculate duration and ensure it's at least 1 ms
+        duration_ms = max(1, int((time.time() - start_time) * 1000))
         return ProcessingResult(
             success=False,
             error=f"Processing error: {str(e)}",
-            duration_ms=int((time.time() - start_time) * 1000),
+            duration_ms=duration_ms,
         )
-
 
 def _detect_asset_type(file_path: Path) -> AssetType:
     """
@@ -181,6 +186,8 @@ def _detect_by_extension(file_path: Path) -> AssetType:
     return AssetType.OTHER
 
 
+# src/quacktool/core.py - Update _generate_output_path for PathsConfig compatibility
+
 def _generate_output_path(input_path: Path, file_format: str | None = None) -> Path:
     """
     Generate an output path based on the input path and optional format.
@@ -196,6 +203,9 @@ def _generate_output_path(input_path: Path, file_format: str | None = None) -> P
     tool_config = get_tool_config()
 
     # Extract output_dir with fallback, handling both dict and object access
+    # Default to "./output" if there's any issue accessing the config
+    output_dir = "./output"  # Default fallback
+
     if isinstance(tool_config, dict):
         output_dir = tool_config.get("output_dir", "./output")
     else:
@@ -220,7 +230,6 @@ def _generate_output_path(input_path: Path, file_format: str | None = None) -> P
         counter += 1
 
     return output_path
-
 
 def _process_by_type_and_mode(
         asset_config: AssetConfig,

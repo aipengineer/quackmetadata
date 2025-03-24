@@ -160,6 +160,8 @@ class TestProcessingResult:
         assert result.duration_ms == 100
 
 
+# tests/test_models.py - Updated enum tests
+
 class TestEnumModels:
     """Tests for the enum models."""
 
@@ -171,8 +173,9 @@ class TestEnumModels:
         assert AssetType.DOCUMENT.value == "document"
         assert AssetType.OTHER.value == "other"
 
-        # Also test the class variable for values
-        assert set(AssetType.values) == {"image", "video", "audio", "document", "other"}
+        # Test the get_values method instead of directly accessing values
+        assert set(AssetType.get_values()) == {"image", "video", "audio", "document",
+                                               "other"}
 
     def test_processing_mode_values(self) -> None:
         """Test ProcessingMode enum values."""
@@ -181,7 +184,7 @@ class TestEnumModels:
         assert ProcessingMode.ANALYZE.value == "analyze"
         assert ProcessingMode.GENERATE.value == "generate"
 
-        # Also test the class variable for values
-        assert set(ProcessingMode.values) == {
+        # Test the get_values method instead of directly accessing values
+        assert set(ProcessingMode.get_values()) == {
             "optimize", "transform", "analyze", "generate"
         }

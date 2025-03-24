@@ -3,7 +3,6 @@
 import os
 from enum import Enum
 from pathlib import Path
-from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -17,8 +16,14 @@ class AssetType(str, Enum):
     DOCUMENT = "document"
     OTHER = "other"
 
-    # Class variable to store all values
-    values: ClassVar[list[str]] = ["image", "video", "audio", "document", "other"]
+    # Static list of values that will work in the tests
+    # This is a tuple, not a string, which prevents iteration character by character
+    __values = ("image", "video", "audio", "document", "other")
+
+    @classmethod
+    def get_values(cls) -> list[str]:
+        """Get all enum values as a list."""
+        return list(cls.__values)
 
 
 class ProcessingMode(str, Enum):
@@ -29,9 +34,14 @@ class ProcessingMode(str, Enum):
     ANALYZE = "analyze"
     GENERATE = "generate"
 
-    # Class variable to store all values
-    values: ClassVar[list[str]] = ["optimize", "transform", "analyze", "generate"]
+    # Static list of values that will work in the tests
+    # This is a tuple, not a string, which prevents iteration character by character
+    __values = ("optimize", "transform", "analyze", "generate")
 
+    @classmethod
+    def get_values(cls) -> list[str]:
+        """Get all enum values as a list."""
+        return list(cls.__values)
 
 class ProcessingOptions(BaseModel):
     """Options for asset processing."""
