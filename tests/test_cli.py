@@ -276,7 +276,7 @@ class TestQuackToolCli:
 
         # Also verify the result exit code for double confirmation
         assert result.exit_code == 1
-        
+
     @mock.patch("quacktool.demo_cli.display_version_info")
     def test_version_command(self, mock_display_version: mock.MagicMock,
                              cli_runner: CliRunner) -> None:
