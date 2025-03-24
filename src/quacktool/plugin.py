@@ -11,6 +11,7 @@ import os
 import tempfile
 from pathlib import Path
 
+from quacktool.protocols import QuackToolPluginProtocol
 from quackcore.integrations.results import IntegrationResult
 from quackcore.plugins.protocols import QuackPluginProtocol
 
@@ -213,7 +214,7 @@ class QuackToolPlugin(QuackPluginProtocol):
         )
 
 
-def create_plugin() -> QuackPluginProtocol:
+def create_plugin() -> QuackToolPluginProtocol:
     """
     Create and return a QuackTool plugin instance.
 

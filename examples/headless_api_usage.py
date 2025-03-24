@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# examples/headless_api_usage.py
 # examples/headless_api_usage.py
 """
 Example demonstrating how QuackBuddy would use QuackTool's headless API.
