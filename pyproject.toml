@@ -1,0 +1,132 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quacktool"
+version = "0.1.0"
+description = "A QuackVerse tool for automation"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "GNU GPL" }
+authors = [
+    { name = "Your Name", email = "your.email@example.com" }
+]
+keywords = [
+    "automation",
+    "content-creation",
+    "media-production",
+    "quackverse",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "quackcore",
+    "pydantic>=2.6.0",
+    "rich>=13.6.0",
+    "click>=8.1.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.2.0",
+    "mypy>=1.8.0",
+    "isort",
+    "hatchling",
+    "black>=23.0.0",
+    "hypothesis",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/yourusername/quacktool"
+"Bug Tracker" = "https://github.com/yourusername/quacktool/issues"
+
+[project.scripts]
+quacktool = "quacktool.cli:main"
+
+[tool.hatch.version]
+path = "src/quacktool/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/quacktool"]
+
+# Add this section to allow direct references in dependencies
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "ANN", # flake8-annotations
+    "S",   # flake8-bandit
+    "A",   # flake8-builtins
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]  # Disable S101 (assert warning) in test files
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.mypy]
+python_version = "3.13"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+strict_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+filterwarnings = ["error"]
+addopts = "-v --cov=quacktool --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["quacktool"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+
+[project.entry-points."quackcore.plugins"]
+quacktool = "quacktool.plugin:create_plugin"

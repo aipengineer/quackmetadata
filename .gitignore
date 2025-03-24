@@ -165,10 +165,32 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+.idea/
 
 # Ruff stuff:
 .ruff_cache/
 
 # PyPI configuration file
 .pypirc
+
+# Project specific
+temp/
+output/
+logs/
+*.log
+setup.sh
+**/_transient-files/
+
+# Sensitive information
+*.pem
+credentials.json
+client_secrets.json
+token.json
+.env
+
+# Generated documentation
+docs/_build/
+site/
+
+# QuackTool specific output
+*.processed.*

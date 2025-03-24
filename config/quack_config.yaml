@@ -1,0 +1,34 @@
+# Default configuration for QuackTool
+
+general:
+  project_name: "QuackTool"
+  environment: "development"
+  debug: false
+  verbose: false
+
+paths:
+  base_dir: "./"
+  output_dir: "./output"
+  assets_dir: "./assets"
+  data_dir: "./data"
+  temp_dir: "./temp"
+
+logging:
+  level: "INFO"
+  file: "logs/quacktool.log"
+  console: true
+
+plugins:
+  enabled:
+    - "QuackTool"
+  paths:
+    - "./plugins"
+
+# QuackTool specific configuration
+custom:
+  quacktool:
+    default_quality: 80
+    default_format: "webp"
+    temp_dir: "./temp"
+    output_dir: "./output"
+    log_level: "INFO"
