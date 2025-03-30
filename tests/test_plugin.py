@@ -32,7 +32,7 @@ class TestQuackToolPlugin:
         assert plugin.is_available() is True
 
     @mock.patch(
-        "quacktool.plugin.process_asset") 
+        "quacktool.plugin.process_asset")
     def test_process_file_success(self, mock_process_asset: mock.MagicMock) -> None:
         """Test successful file processing via plugin."""
         # Create a temporary file
