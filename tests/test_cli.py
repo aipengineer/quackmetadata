@@ -257,35 +257,30 @@ class TestQuackToolCli:
                 with mock.patch("pathlib.Path.mkdir", return_value=None):
                     # Fix the Click.Path.convert issue
                     with mock.patch("click.Path.convert", return_value=str(test_file)):
-                        # We need to modify the demo_cli.py file behavior or our test
-                        with mock.patch("sys.exit") as mock_exit:
-                            # Make sure sys.exit actually raises SystemExit(1)
-                            def exit_with_error(code=1):
-                                raise SystemExit(code)
+                        # Mock sys.exit directly with a new function that records calls
+                        exit_calls = []
 
-                            mock_exit.side_effect = exit_with_error
+                        def mock_exit(code=0):
+                            exit_calls.append(code)
+                            # Don't actually exit in tests
+                            return None
 
-                            # Try to catch the SystemExit using the try/except approach
-                            try:
-                                # Run batch command with catch_exceptions=False to ensure SystemExit propagates
-                                cli_runner.invoke(cli, [
-                                    "batch",
-                                    str(test_file),
-                                    "--output-dir", str(output_dir),
-                                ], obj={
-                                    "logger": mock_logger,
-                                    "quack_ctx": mock_ctx,
-                                    "config": {},
-                                }, catch_exceptions=False)
+                        with mock.patch("sys.exit", side_effect=mock_exit):
+                            # Run the command with catch_exceptions=True
+                            result = cli_runner.invoke(cli, [
+                                "batch",
+                                str(test_file),
+                                "--output-dir", str(output_dir),
+                            ], obj={
+                                "logger": mock_logger,
+                                "quack_ctx": mock_ctx,
+                                "config": {},
+                            })
 
-                                # If we get here, the test should fail
-                                pytest.fail("Should have raised SystemExit")
-                            except SystemExit as e:
-                                # Verify we got the expected exit code
-                                assert e.code != 0, "Should have exited with non-zero code"
-
-                            # Verify sys.exit was called
-                            mock_exit.assert_called()
+                            # Check that sys.exit was called with non-zero
+                            assert len(exit_calls) > 0, "sys.exit was not called"
+                            assert exit_calls[
+                                       0] != 0, f"Expected non-zero exit code, got {exit_calls[0]}"
 
     @mock.patch("quacktool.demo_cli.display_version_info")
     def test_version_command(self, mock_display_version: mock.MagicMock,
