@@ -1,4 +1,4 @@
-# tests/test_property_based.py - Fixed decorator order
+# tests/test_property_based.py
 """
 Property-based tests for QuackTool using Hypothesis.
 
@@ -210,7 +210,6 @@ class TestPropertyBased:
         # Advanced options must be a dictionary
         assert isinstance(options.advanced_options, dict)
 
-    # FIXED: Correct order of decorators
     @mock.patch("pathlib.Path.exists")
     @given(st.text(min_size=1, max_size=10).map(lambda s: f"test_{s}.txt"))
     def test_output_path_generation_properties(
@@ -246,98 +245,89 @@ class TestPropertyBased:
                     # Output path should be in the output directory
                     assert output_path.parent == Path("./output")
 
-    # FIXED: Correct order of decorators
-    @mock.patch("quacktool.core._process_by_type_and_mode")
-    @mock.patch("quacktool.core._generate_output_path")
-    @mock.patch("pathlib.Path.exists")
-    @given(st.sampled_from(list(AssetType)))
-    def test_process_asset_type_properties(
-            self,
-            asset_type: AssetType,
-            mock_exists: mock.MagicMock,
-            mock_generate_output: mock.MagicMock,
-            mock_process: mock.MagicMock,
-    ) -> None:
+    def test_process_asset_type_properties(self) -> None:
         """Test that process_asset handles all asset types correctly."""
-        # Set up mocks
-        mock_exists.return_value = True
-        output_path = Path("output/test.txt")
-        mock_generate_output.return_value = output_path
-        mock_process.return_value = ProcessingResult(
-            success=True,
-            output_path=output_path,
-        )
+        # Using simpler approach without mixing Hypothesis and mock.patch
+        for asset_type in list(AssetType):
+            # Set up mocks
+            with mock.patch("pathlib.Path.exists", return_value=True):
+                with mock.patch("quacktool.core._generate_output_path") as mock_generate_output:
+                    with mock.patch("quacktool.core._process_by_type_and_mode") as mock_process:
+                        # Configure mocks
+                        output_path = Path("output/test.txt")
+                        mock_generate_output.return_value = output_path
+                        mock_process.return_value = ProcessingResult(
+                            success=True,
+                            output_path=output_path,
+                        )
 
-        # Create test config with the given asset type
-        # Create a temporary file for the input_path
-        with tempfile.NamedTemporaryFile() as temp_file:
-            input_path = Path(temp_file.name)
-            config = AssetConfig(
-                input_path=input_path,
-                asset_type=asset_type,
-            )
+                        # Create test config with the given asset type
+                        # Create a temporary file for the input_path
+                        with tempfile.NamedTemporaryFile() as temp_file:
+                            input_path = Path(temp_file.name)
+                            config = AssetConfig(
+                                input_path=input_path,
+                                asset_type=asset_type,
+                            )
 
-            # Process the asset
-            result = process_asset(config)
+                            # Process the asset
+                            result = process_asset(config)
 
-            # Result should be successful
-            assert result.success is True
-            assert result.output_path == output_path
+                            # Result should be successful
+                            assert result.success is True
+                            assert result.output_path == output_path
 
-            # The process function should be called with the correct asset type
-            mock_process.assert_called_once()
-            args = mock_process.call_args[0]
-            assert args[1] == asset_type
+                            # The process function should be called with the correct asset type
+                            mock_process.assert_called_once()
+                            args = mock_process.call_args[0]
+                            assert args[1] == asset_type
 
-    # FIXED: Correct order of decorators
-    @mock.patch("quacktool.core.fs.copy")
-    @mock.patch("quacktool.core.fs.get_file_info")
-    @given(st.sampled_from(list(ProcessingMode)))
-    def test_process_asset_mode_properties(
-            self,
-            mode: ProcessingMode,
-            mock_file_info: mock.MagicMock,
-            mock_copy: mock.MagicMock,
-    ) -> None:
+    def test_process_asset_mode_properties(self) -> None:
         """Test that process_asset handles all processing modes correctly."""
-        # Skip test if running in CI or without file system access
-        hypothesis.assume(os.environ.get("CI") != "true")
+        # Using simpler approach without mixing Hypothesis and mock.patch
+        for mode in list(ProcessingMode):
+            # Skip test if running in CI
+            if os.environ.get("CI") == "true":
+                continue
 
-        # Set up mocks
-        mock_file_info.return_value = mock.MagicMock(
-            success=True,
-            exists=True,
-            size=1024,
-        )
-        mock_copy.return_value = mock.MagicMock(success=True)
-
-        # Create a temporary file for testing
-        with tempfile.NamedTemporaryFile() as temp_file:
-            input_path = Path(temp_file.name)
-            output_path = Path("output/test.txt")
-
-            # Mock _generate_output_path to avoid config issues
-            with mock.patch("quacktool.core._generate_output_path") as mock_generate:
-                mock_generate.return_value = output_path
-
-                # Create config with the given mode
-                config = AssetConfig(
-                    input_path=input_path,
-                    output_path=output_path,
-                    options=ProcessingOptions(mode=mode),
-                )
-
-                # Mock additional functions to avoid actual processing
-                with mock.patch("quacktool.core._process_by_type_and_mode") as mock_process:
-                    mock_process.return_value = ProcessingResult(
+            # Set up mocks
+            with mock.patch("quacktool.core.fs.get_file_info") as mock_file_info:
+                with mock.patch("quacktool.core.fs.copy") as mock_copy:
+                    # Configure mocks
+                    mock_file_info.return_value = mock.MagicMock(
                         success=True,
-                        output_path=output_path,
+                        exists=True,
+                        size=1024,
                     )
+                    mock_copy.return_value = mock.MagicMock(success=True)
 
-                    # Process the asset
-                    with mock.patch("pathlib.Path.exists", return_value=True):
-                        result = process_asset(config)
+                    # Create a temporary file for testing
+                    with tempfile.NamedTemporaryFile() as temp_file:
+                        input_path = Path(temp_file.name)
+                        output_path = Path("output/test.txt")
 
-                # Result should be successful
-                assert result.success is True
-                assert result.output_path == output_path
+                        # Mock _generate_output_path to avoid config issues
+                        with mock.patch("quacktool.core._generate_output_path") as mock_generate:
+                            mock_generate.return_value = output_path
+
+                            # Create config with the given mode
+                            config = AssetConfig(
+                                input_path=input_path,
+                                output_path=output_path,
+                                options=ProcessingOptions(mode=mode),
+                            )
+
+                            # Mock additional functions to avoid actual processing
+                            with mock.patch("quacktool.core._process_by_type_and_mode") as mock_process:
+                                mock_process.return_value = ProcessingResult(
+                                    success=True,
+                                    output_path=output_path,
+                                )
+
+                                # Process the asset
+                                with mock.patch("pathlib.Path.exists", return_value=True):
+                                    result = process_asset(config)
+
+                            # Result should be successful
+                            assert result.success is True
+                            assert result.output_path == output_path
