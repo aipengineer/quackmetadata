@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 from typing import Dict, Optional
 
-from quackcore.integrations.results import IntegrationResult
+from quackcore.integrations.core.results import IntegrationResult
 
 from quacktool.core import process_asset
 from quacktool.models import AssetConfig, ProcessingMode, ProcessingOptions

@@ -2,7 +2,7 @@
 from logging import Logger
 from typing import Protocol, runtime_checkable
 
-from quackcore.integrations.results import IntegrationResult
+from quackcore.integrations.core.results import IntegrationResult
 from quackcore.plugins.protocols import QuackPluginProtocol
 
 
