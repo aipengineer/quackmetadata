@@ -31,7 +31,7 @@ class TestQuackToolPlugin:
         assert "initialized successfully" in result.message
         assert plugin.is_available() is True
 
-    @mock.patch("quacktool.plugin.process_asset")
+    @mock.patch("quacktool.core.process_asset")
     def test_process_file_success(self, mock_process_asset: mock.MagicMock) -> None:
         """Test successful file processing via plugin."""
         # Create a temporary file
@@ -158,7 +158,7 @@ class TestQuackToolPlugin:
             "metadata": {"author": "Test"},
             "advanced_options": {"key": "value"},
         }
-        options = plugin._create_options(options_dict)
+        options = plugin_impl._create_options(options_dict)
 
         assert options.mode == ProcessingMode.TRANSFORM
         assert options.quality == 95
@@ -168,11 +168,11 @@ class TestQuackToolPlugin:
         assert options.advanced_options == {"key": "value"}
 
         # Test with invalid mode (should default to OPTIMIZE)
-        options = plugin._create_options({"mode": "invalid"})
+        options = plugin_impl._create_options({"mode": "invalid"})
         assert options.mode == ProcessingMode.OPTIMIZE
 
         # Test with invalid types
-        options = plugin._create_options({
+        options = plugin_impl._create_options({
             "mode": 123,  # Should default to OPTIMIZE
             "quality": "invalid",  # Should default to 80
             "width": "invalid",

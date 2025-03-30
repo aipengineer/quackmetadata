@@ -11,7 +11,8 @@ from unittest import mock
 
 import pytest
 
-from quacktool import process_asset
+# Import function directly to avoid lazy loading
+from quacktool.core import process_asset
 from quacktool.models import AssetConfig, ProcessingMode, ProcessingOptions
 from quacktool.plugin import create_plugin
 
@@ -39,6 +40,7 @@ class TestQuackToolIntegration:
                 output_path=output_path,
                 options=ProcessingOptions(quality=95, format="txt"),
             )
+            # Use process_asset directly from core to avoid lazy loading issues
             api_result = process_asset(api_config)
 
             # Process via plugin
@@ -83,7 +85,7 @@ class TestQuackToolIntegration:
             tags=["test", "integration"],
         )
 
-        # Process the asset
+        # Process the asset - use directly from core
         result = process_asset(config)
 
         # Verify the result

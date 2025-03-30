@@ -1,4 +1,4 @@
-# tests/test_property_based.py
+# tests/test_property_based.py - Fixed decorator order
 """
 Property-based tests for QuackTool using Hypothesis.
 
@@ -210,12 +210,13 @@ class TestPropertyBased:
         # Advanced options must be a dictionary
         assert isinstance(options.advanced_options, dict)
 
-    @mock.patch("pathlib.Path.exists")  # Only keep the mock that's actually used
+    # FIXED: Correct order of decorators
+    @mock.patch("pathlib.Path.exists")
     @given(st.text(min_size=1, max_size=10).map(lambda s: f"test_{s}.txt"))
     def test_output_path_generation_properties(
             self,
+            mock_exists: mock.MagicMock,
             filename: str,
-            mock_exists: mock.MagicMock,  # Only one mock parameter now
     ) -> None:
         """Test that output path generation works correctly for all inputs."""
         # Set up mock for path existence check
@@ -245,14 +246,14 @@ class TestPropertyBased:
                     # Output path should be in the output directory
                     assert output_path.parent == Path("./output")
 
+    # FIXED: Correct order of decorators
     @mock.patch("quacktool.core._process_by_type_and_mode")
     @mock.patch("quacktool.core._generate_output_path")
     @mock.patch("pathlib.Path.exists")
-    # Use sampled_from instead of asset_type_strategy to avoid parameter order issues
     @given(st.sampled_from(list(AssetType)))
     def test_process_asset_type_properties(
             self,
-            asset_type: AssetType,  # This is now a real AssetType enum value
+            asset_type: AssetType,
             mock_exists: mock.MagicMock,
             mock_generate_output: mock.MagicMock,
             mock_process: mock.MagicMock,
@@ -273,7 +274,7 @@ class TestPropertyBased:
             input_path = Path(temp_file.name)
             config = AssetConfig(
                 input_path=input_path,
-                asset_type=asset_type,  # Now this is a real enum value
+                asset_type=asset_type,
             )
 
             # Process the asset
@@ -288,14 +289,13 @@ class TestPropertyBased:
             args = mock_process.call_args[0]
             assert args[1] == asset_type
 
-
+    # FIXED: Correct order of decorators
     @mock.patch("quacktool.core.fs.copy")
     @mock.patch("quacktool.core.fs.get_file_info")
-    # Use sampled_from instead of processing_mode_strategy to avoid parameter issues
     @given(st.sampled_from(list(ProcessingMode)))
     def test_process_asset_mode_properties(
             self,
-            mode: ProcessingMode,  # This is now a real ProcessingMode enum value
+            mode: ProcessingMode,
             mock_file_info: mock.MagicMock,
             mock_copy: mock.MagicMock,
     ) -> None:
@@ -324,7 +324,7 @@ class TestPropertyBased:
                 config = AssetConfig(
                     input_path=input_path,
                     output_path=output_path,
-                    options=ProcessingOptions(mode=mode),  # Now mode is a real enum
+                    options=ProcessingOptions(mode=mode),
                 )
 
                 # Mock additional functions to avoid actual processing

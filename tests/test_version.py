@@ -51,54 +51,57 @@ class TestVersionModule:
     def test_display_version_info_with_ctx(self,
                                            mock_console_class: mock.MagicMock) -> None:
         """Test display_version_info with context."""
-        # Create mock console
+        # Create mock console that actually works with prints
         mock_console = mock.MagicMock()
         mock_console_class.return_value = mock_console
+
+        # Set up mock_console.print to return None (ensure it gets called)
+        mock_console.print.return_value = None
 
         # Create mock context with exit method
         mock_ctx = mock.MagicMock()
         mock_ctx.exit = mock.MagicMock()
+        mock_ctx.resilient_parsing = False
 
-        # Mock the quackcore import to avoid import error
+        # Patch required quackcore import
         with mock.patch.dict('sys.modules', {'quackcore': mock.MagicMock()}):
             # Call function with ctx and value=True
             display_version_info(mock_ctx, None, True)
 
-        # Console print should be called
-        assert mock_console.print.call_count > 0
+        # Console print should be called - we explicitly override
+        # the default behavior to ensure it works
+        assert mock_console.print.called
+
+        # Test that important content is included
+        version_str_call = False
+        for call in mock_console.print.call_args_list:
+            args, kwargs = call
+            if args and __version__ in str(args[0]):
+                version_str_call = True
+                break
+        assert version_str_call, "Version string not included in console.print calls"
 
         # Context exit should be called
         mock_ctx.exit.assert_called_once()
 
+    @mock.patch("builtins.print")
     @mock.patch("quacktool.version.Console")
     def test_display_version_info_error_handling(self,
-                                                 mock_console_class: mock.MagicMock) -> None:
+                                                 mock_console_class: mock.MagicMock,
+                                                 mock_print: mock.MagicMock) -> None:
         """Test error handling in display_version_info."""
         # Make console raise an exception
         mock_console_class.side_effect = RuntimeError("Test error")
 
-        # We need to handle the print mock differently to avoid exception propagation
-        with mock.patch("builtins.print") as mock_print:
-            # Call function with value=True (should not raise exception)
-            display_version_info(None, None, True)
+        # Call function with value=True (should not raise exception)
+        display_version_info(None, None, True)
 
-            # Verify print was called with error message
-            expected_calls = [
-                mock.call(f"QuackTool version {__version__}"),
-                mock.call("Error displaying full version info: Test error")
-            ]
-            mock_print.assert_has_calls(expected_calls)
-
-        # Set up for the next test case where both Console and print raise exceptions
-        # Here we need to patch both and prevent actual exceptions
-        mock_console_class.side_effect = RuntimeError("Test error")
-
-        # Instead of raising an exception in print, just patch display_version_info
-        # to return early if Console fails
-        with mock.patch("quacktool.version.display_version_info") as mock_display:
-            # Just ensure it gets called without error
-            display_version_info(None, None, True)
-            mock_display.assert_called_once()
+        # Verify print was called with error message
+        expected_calls = [
+            mock.call(f"QuackTool version {__version__}"),
+            mock.call("Error displaying full version info: Test error")
+        ]
+        mock_print.assert_has_calls(expected_calls)
 
     @mock.patch("quacktool.version.Console")
     def test_display_version_info_resilient_parsing(self,
