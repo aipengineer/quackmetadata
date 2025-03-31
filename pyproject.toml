@@ -51,7 +51,7 @@ dev = [
 "Bug Tracker" = "https://github.com/yourusername/quacktool/issues"
 
 [project.scripts]
-quacktool = "quackmetada.cli:main"
+quacktool = "quackmetadata.cli:main"
 
 [tool.hatch.version]
 path = "src/quacktool/__init__.py"
