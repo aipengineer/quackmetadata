@@ -13,8 +13,8 @@ from quackcore.config.models import QuackConfig
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.plugins.protocols import QuackPluginProtocol
 
-from quacktool.config import QuackToolConfig
-from quacktool.models import AssetConfig, ProcessingOptions, ProcessingResult
+from quackmetadata.config import QuackToolConfig
+from quackmetadata.models import AssetConfig, ProcessingOptions, ProcessingResult
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def test_config() -> QuackConfig:
             "temp_dir": "./temp",
         },
         custom={
-            "quacktool": QuackToolConfig(
+            "quackmetadata": QuackToolConfig(
                 default_quality=85,
                 default_format="webp",
                 temp_dir="./temp_test",

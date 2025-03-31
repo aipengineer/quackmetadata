@@ -1,221 +1,196 @@
-# QuackTool 🦆
+# QuackMetadata
 
-A QuackVerse tool for automation, built on top of QuackCore.
+A QuackTool for extracting structured metadata from text documents using large language models.
 
-## 🌟 Features
+## 🔍 Features
 
-- Process media assets (images, videos, audio, documents)
-- Support for multiple processing modes (optimize, transform, analyze, generate)
-- Command-line interface for easy use
-- Python API for integration into other applications
-- Plugin interface for extending functionality
+- Download text documents from Google Drive
+- Extract structured metadata using LLMs (like GPT-4 or Claude)
+- Validate output against a Pydantic schema
+- Store results as `.metadata.json` files
+- Upload metadata back to Google Drive
+- Display metadata as trading cards in the terminal
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Python 3.13 or higher
-- QuackCore library
-
-### Installation
+## 🛠️ Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/quacktool.git
-cd quacktool
+cd quackmetadata
 
-# Install the package using a modern package manager like uv
-uv venv --python 3.13
-source .venv/bin/activate
-uv pip install -e .
-
-# Or use the provided setup script
-make setup
-source setup.sh
+# Install with development dependencies
+pip install -e ".[dev]"
 ```
 
-### Using the CLI
+## ⚙️ Configuration
 
-The QuackTool CLI provides commands for processing assets:
-
-```bash
-# Process a single file
-quacktool process image.jpg --output processed.webp --quality 85
-
-# Process multiple files in batch mode
-quacktool batch image1.jpg image2.png --output-dir ./processed --format webp
-```
-
-### Using the Python API
-
-```python
-from pathlib import Path
-from quacktool import process_asset
-from quacktool.models import AssetConfig, ProcessingOptions, ProcessingMode
-
-# Configure the asset processing
-config = AssetConfig(
-    input_path=Path("image.jpg"),
-    output_path=Path("processed.webp"),
-    options=ProcessingOptions(
-        mode=ProcessingMode.OPTIMIZE,
-        quality=85,
-        format="webp",
-    ),
-)
-
-# Process the asset
-result = process_asset(config)
-
-if result.success:
-    print(f"Processing successful: {result.output_path}")
-    print(f"Metrics: {result.metrics}")
-else:
-    print(f"Processing failed: {result.error}")
-```
-
-## 🧩 Integration with QuackCore
-
-QuackTool integrates with QuackCore through the plugin system:
-
-```python
-from quackcore.plugins import registry
-
-# Get the QuackTool plugin
-quacktool_plugin = registry.get_plugin("QuackTool")
-
-# Process a file using the plugin
-result = quacktool_plugin.process_file(
-    file_path="image.jpg",
-    output_path="processed.webp",
-    options={
-        "quality": 85,
-        "format": "webp",
-        "mode": "optimize",
-    },
-)
-
-if result.success:
-    print(f"Processing successful: {result.content}")
-else:
-    print(f"Processing failed: {result.error}")
-
-## 🔧 Development
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/quacktool.git
-cd quacktool
-
-# Set up development environment
-make setup
-source setup.sh
-
-# Run tests
-make test
-
-# Format code
-make format
-
-# Lint code
-make lint
-```
-
-### Project Structure
-
-The project follows a standard Python package structure:
-
-```
-quacktool/
-├── examples/               # Usage examples
-├── src/
-│   └── quacktool/          # Main package
-│       ├── __init__.py     # Package initialization
-│       ├── cli.py          # Command-line interface
-│       ├── config.py       # Configuration management
-│       ├── core.py         # Core functionality
-│       ├── models.py       # Data models
-│       ├── plugin.py       # QuackCore plugin interface
-│       └── version.py      # Version information
-├── tests/                  # Test suite
-├── .gitignore              # Git ignore file
-├── Makefile                # Makefile for common tasks
-├── pyproject.toml          # Project metadata and dependencies
-└── README.md               # Project documentation
-```
-
-### Adding New Features
-
-1. Implement the feature in the appropriate module
-2. Add tests to verify the functionality
-3. Update documentation with the new feature
-4. Run the test suite to ensure everything works
-
-## 📚 Configuration
-
-QuackTool uses QuackCore's configuration system. The default configuration is:
+Create a `quack_config.yaml` file in your working directory:
 
 ```yaml
-custom:
-  quacktool:
-    default_quality: 80
-    default_format: "webp"
-    temp_dir: "./temp"
-    output_dir: "./output"
-    log_level: "INFO"
+general:
+  project_name: QuackMetadata
+
+integrations:
+  google:
+    client_secrets_file: config/google_client_secret.json
+    credentials_file: config/google_credentials.json
+    
+  llm:
+    default_provider: openai
+    openai:
+      api_key: YOUR_OPENAI_API_KEY
+      default_model: gpt-4o
 ```
 
-You can override this configuration by creating a `quack_config.yaml` file in your project directory or by setting environment variables:
+### Google Drive Setup
+
+1. Create a Google Cloud Project and enable the Google Drive API
+2. Create OAuth credentials (Desktop application)
+3. Save the client secrets JSON file to `config/google_client_secret.json`
+4. On first run, authenticate through your browser when prompted
+
+### LLM Setup
+
+1. Obtain an API key from OpenAI or Anthropic
+2. Add it to your configuration file or set it as an environment variable:
+   - `OPENAI_API_KEY` for OpenAI
+   - `ANTHROPIC_API_KEY` for Anthropic
+
+## 🚀 Usage
+
+### Command-Line Interface
+
+Extract metadata from a local text file:
 
 ```bash
-export QUACK_QUACKTOOL__DEFAULT_QUALITY=90
-export QUACK_QUACKTOOL__OUTPUT_DIR="/custom/output/path"
+quackmetadata metadata extract path/to/file.txt
 ```
 
-## 📋 Command Reference
-
-### `quacktool process`
-
-Process a single file with custom options.
+Extract metadata from a Google Drive file (using file ID):
 
 ```bash
-quacktool process INPUT_FILE [OPTIONS]
+quackmetadata metadata extract 1abc2defg3hij
 ```
 
-Options:
-- `--output`, `-o`: Output path
-- `--mode`, `-m`: Processing mode (optimize, transform, analyze, generate)
-- `--quality`, `-q`: Quality level (1-100)
-- `--format`, `-f`: Output format
-- `--width`: Output width
-- `--height`: Output height
-- `--type`: Asset type (image, video, audio, document)
-
-### `quacktool batch`
-
-Process multiple files with the same settings.
+Additional options:
 
 ```bash
-quacktool batch [INPUT_FILES...] [OPTIONS]
+# Use a custom prompt template
+quackmetadata metadata extract file.txt --prompt-template path/to/custom.mustache
+
+# Don't upload results back to Google Drive
+quackmetadata metadata extract file.txt --dry-run
+
+# Specify an output path
+quackmetadata metadata extract file.txt --output path/to/output.metadata.json
+
+# Set number of retries for LLM calls
+quackmetadata metadata extract file.txt --retries 5
+
+# Enable verbose output
+quackmetadata metadata extract file.txt --verbose
 ```
 
-Options:
-- `--output-dir`, `-o`: Output directory (required)
-- `--mode`, `-m`: Processing mode (optimize, transform, analyze, generate)
-- `--quality`, `-q`: Quality level (1-100)
-- `--format`, `-f`: Output format
+### Python API
 
-## 🔌 Extending QuackTool
+```python
+from quackmetadata.plugins.metadata import MetadataPlugin
 
-You can extend QuackTool by implementing your own processing functions in `core.py` or by creating new commands in `cli.py`.
+# Create and initialize the plugin
+plugin = MetadataPlugin()
+plugin.initialize()
+
+# Process a file
+result = plugin.process_file(
+   file_path="path/to/file.txt",
+   output_path="path/to/output.metadata.json",
+   options={
+      "prompt_template": "path/to/custom.mustache",
+      "retries": 3,
+      "dry_run": False,
+      "verbose": True
+   }
+)
+
+if result.success:
+   # Access the extracted metadata
+   metadata = result.content.get("metadata")
+   print(metadata)
+else:
+   print(f"Error: {result.error}")
+```
+
+## 📝 Metadata Schema
+
+The extracted metadata follows this structure:
+
+```python
+class AuthorProfile(BaseModel):
+    name: str                # Author's name
+    profession: str          # Author's profession
+    writing_style: str       # Writing style
+    possible_age_range: str  # Estimated age range
+    location_guess: str      # Possible location
+
+class Metadata(BaseModel):
+    title: str               # Document title
+    summary: str             # Brief summary
+    author_style: str        # Writing style
+    tone: str                # Emotional tone
+    language: str            # Document language
+    domain: str              # Subject domain
+    estimated_date: str | None = None  # Estimated date
+    rarity: str              # Rarity classification
+    author_profile: AuthorProfile  # Generated author profile
+```
+
+## 🎭 Customizing Prompts
+
+Create custom prompt templates using Mustache syntax. Templates should be placed in the `prompts/metadata/` directory with a `.mustache` extension.
+
+Available context variables:
+- `{{content}}`: The document content
+
+Example template:
+
+```mustache
+You are an assistant extracting metadata from a document.
+
+Here is the content:
+---
+{{content}}
+---
+
+Extract the following fields:
+- Title: ...
+- Summary: ...
+...
+```
+
+## 🖥️ Demo Output
+
+When running the tool, you'll see a "metadata card" displayed in the terminal:
+
+```
+╔══════════════════════════════════════════╗
+║            🃏 METADATA CARD              ║
+╠══════════════════════════════════════════╣
+║ Title: The Duck Rebellion               ║
+║ Domain: Politics / Satire               ║
+║ Tone: Ironic                            ║
+║ Rarity: 🟣 Legendary                     ║
+╚══════════════════════════════════════════╝
+```
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+GNU GPL
 
-## 🙏 Acknowledgements
+## 🧑‍🏫 Teaching Notes
 
-- QuackCore for providing the foundation infrastructure
-- The QuackVerse ecosystem for inspiration and integration
+QuackMetadata was created as a teaching tool to demonstrate:
+- Prompt engineering
+- Schema validation
+- Integration of cloud services
+- Good CLI/UX design
+- Modularity and debugging

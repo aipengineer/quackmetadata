@@ -1,6 +1,13 @@
-# src/quacktool/protocols.py
+# src/quackmetadata/protocols.py
+"""
+Protocol definitions for QuackMetadata.
+
+This module defines protocols that plugins must implement to be
+compatible with QuackCore and QuackMetadata.
+"""
+
 from logging import Logger
-from typing import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable, Any
 
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.plugins.protocols import QuackPluginProtocol
@@ -9,6 +16,9 @@ from quackcore.plugins.protocols import QuackPluginProtocol
 @runtime_checkable
 class QuackToolPluginProtocol(QuackPluginProtocol, Protocol):
     """Protocol for QuackTool plugins."""
+
+    # Add initialization state attribute to the protocol
+    _initialized: bool
 
     @property
     def logger(self) -> Logger:
@@ -32,7 +42,7 @@ class QuackToolPluginProtocol(QuackPluginProtocol, Protocol):
         self,
         file_path: str,
         output_path: str | None = None,
-        options: dict[str, object] | None = None,
+        options: dict[str, Any] | None = None,
     ) -> IntegrationResult:
         """Process a file using the plugin."""
         ...

@@ -1,0 +1,69 @@
+You are an assistant extracting structured metadata from a document.
+
+Here is the content:
+---
+{{content}}
+---
+
+Extract the following fields:
+- Title: Determine the best title for this document
+- Summary: Write a concise summary (100-300 words)
+- Author style: Describe the writing style (e.g., concise, academic, poetic, technical)
+- Tone: Identify the emotional tone (e.g., serious, humorous, critical)
+- Language: Identify the primary language
+- Domain: Specify the subject domain (e.g., politics, philosophy, food, technology)
+- Estimated date: If you can guess when this was written, provide a date or time period
+- Rarity: Rate this document using one of these categories: 🟢 Common, 🔴 Rare, 🟣 Legendary
+
+Now, generate a fictional author profile:
+- Name: A plausible name for the author
+- Profession: What might be their occupation
+- Writing style: Distinctive writing characteristics
+- Possible age range: Estimated age of the author
+- Location guess: Likely geographic location of the author
+
+Here are some examples of well-formatted responses:
+
+Example 1:
+```json
+{
+  "title": "The Evolution of Artificial Intelligence in the 21st Century",
+  "summary": "This academic paper discusses the rapid evolution of artificial intelligence technologies in the 21st century. It covers major developments from early neural networks to modern large language models, highlighting key breakthroughs and their societal implications. The paper emphasizes the need for ethical considerations and regulatory frameworks as AI becomes increasingly integrated into daily life.",
+  "author_style": "Academic, methodical, well-researched",
+  "tone": "Serious, authoritative, cautiously optimistic",
+  "language": "English",
+  "domain": "Computer Science, AI Research",
+  "estimated_date": "2023",
+  "rarity": "🔴 Rare",
+  "author_profile": {
+    "name": "Dr. Sarah Michaels",
+    "profession": "AI Researcher and University Professor",
+    "writing_style": "Structured, citation-heavy, builds logical arguments",
+    "possible_age_range": "45-55",
+    "location_guess": "United States or United Kingdom"
+  }
+}
+```
+
+Example 2:
+```json
+{
+  "title": "The Duck's Garden: A Summer Tale",
+  "summary": "A whimsical short story about a duck named Waddles who cultivates an unusual garden filled with underwater plants and curious creatures. Throughout the changing seasons, Waddles faces challenges from weather and predators but ultimately creates a thriving ecosystem that becomes a haven for other animals in the pond. The story serves as a light allegory for environmental stewardship and community building.",
+  "author_style": "Whimsical, descriptive, narrative-focused",
+  "tone": "Lighthearted, gentle, optimistic",
+  "language": "English",
+  "domain": "Children's Literature, Nature",
+  "estimated_date": "2010-2020",
+  "rarity": "🟢 Common",
+  "author_profile": {
+    "name": "Emily Featherton",
+    "profession": "Elementary school teacher and children's book author",
+    "writing_style": "Accessible vocabulary with vivid nature imagery",
+    "possible_age_range": "30-40",
+    "location_guess": "Rural New England, USA"
+  }
+}
+```
+
+Return everything in **valid JSON** using exactly this structure shown in the examples. Include nothing else in your response.

@@ -1,15 +1,16 @@
-# src/quacktool/config.py
+# src/quackmetadata/config.py
 """
-Configuration management for QuackTool.
+Configuration management for QuackMetadata.
 
 This module uses QuackCore's configuration system to manage settings
-for the QuackTool application.
+for the QuackMetadata application.
 """
 
 import atexit
 import logging
 import os
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field
 from quackcore.config import load_config
@@ -33,24 +34,29 @@ def _close_file_handlers() -> None:
     _file_handlers.clear()
 
 
-class QuackToolConfig(BaseModel):
+class QuackMetadataConfig(BaseModel):
     """
-    QuackTool-specific configuration model.
+    QuackMetadata-specific configuration model.
 
-    This model defines the configuration structure specific to QuackTool,
+    This model defines the configuration structure specific to QuackMetadata,
     which will be stored in the 'custom' section of the QuackCore config.
     """
 
-    default_quality: int = Field(
-        default=80,
-        description="Default quality level for processing",
-        ge=0,
-        le=100,
+    default_prompt_template: str = Field(
+        default="generic",
+        description="Default prompt template for metadata extraction",
     )
 
-    default_format: str = Field(
-        default="webp",
-        description="Default output format",
+    max_retries: int = Field(
+        default=3,
+        description="Maximum retries for LLM calls",
+        ge=1,
+        le=10,
+    )
+
+    output_format: str = Field(
+        default="json",
+        description="Default output format for metadata",
     )
 
     temp_dir: str = Field(
@@ -65,7 +71,7 @@ class QuackToolConfig(BaseModel):
 
     log_level: str = Field(
         default="INFO",
-        description="Logging level for QuackTool",
+        description="Logging level for QuackMetadata",
     )
 
 
@@ -77,7 +83,7 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
         config_path: Optional path to configuration file
 
     Returns:
-        QuackConfig object with QuackTool-specific configuration
+        QuackConfig object with QuackMetadata-specific configuration
     """
     # Reset global config to ensure a fresh load
     global _config
@@ -86,24 +92,24 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
     # Load configuration from file or defaults
     quack_config = load_config(config_path)
 
-    # Initialize QuackTool-specific configuration if not present
+    # Initialize QuackMetadata-specific configuration if not present
     # Handle both dictionary and attribute access for custom
     if hasattr(quack_config.custom, "get"):
         # Dictionary-like access
-        if "quacktool" not in quack_config.custom:
-            quack_config.custom["quacktool"] = QuackToolConfig().model_dump()
-        quacktool_config = quack_config.custom.get("quacktool", {})
+        if "quackmetadata" not in quack_config.custom:
+            quack_config.custom["quackmetadata"] = QuackMetadataConfig().model_dump()
+        metadata_config = quack_config.custom.get("quackmetadata", {})
     else:
         # Attribute-based access
-        if not hasattr(quack_config.custom, "quacktool"):
-            setattr(quack_config.custom, "quacktool", QuackToolConfig().model_dump())
-        quacktool_config = getattr(quack_config.custom, "quacktool", {})
+        if not hasattr(quack_config.custom, "quackmetadata"):
+            setattr(quack_config.custom, "quackmetadata", QuackMetadataConfig().model_dump())
+        metadata_config = getattr(quack_config.custom, "quackmetadata", {})
 
-    # Get the log level from quacktool_config
+    # Get the log level from metadata_config
     log_level_name = (
-        quacktool_config.get("log_level", "INFO")
-        if isinstance(quacktool_config, dict)
-        else getattr(quacktool_config, "log_level", "INFO")
+        metadata_config.get("log_level", "INFO")
+        if isinstance(metadata_config, dict)
+        else getattr(metadata_config, "log_level", "INFO")
     )
     log_level = getattr(logging, log_level_name, logging.INFO)
 
@@ -156,7 +162,7 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
     Path(logs_dir).mkdir(parents=True, exist_ok=True)
 
     try:
-        log_file = Path(logs_dir) / "quacktool.log"
+        log_file = Path(logs_dir) / "quackmetadata.log"
 
         file_handler = logging.FileHandler(log_file, mode="a")
         file_handler.setLevel(log_level)
@@ -177,7 +183,7 @@ _config = None
 
 def get_config() -> QuackConfig:
     """
-    Get the QuackTool configuration.
+    Get the QuackMetadata configuration.
 
     Uses lazy initialization to avoid resource issues during testing.
 
@@ -190,26 +196,26 @@ def get_config() -> QuackConfig:
     return _config
 
 
-def get_tool_config() -> dict[str, object]:
+def get_tool_config() -> dict[str, Any]:
     """
-    Get the QuackTool-specific configuration.
+    Get the QuackMetadata-specific configuration.
 
     Returns:
-        Dictionary containing QuackTool configuration
+        Dictionary containing QuackMetadata configuration
     """
     config = get_config()
-    # Access custom directly, and provide an empty dict as default if quacktool is not found
+    # Access custom directly, and provide an empty dict as default if quackmetadata is not found
     if hasattr(config.custom, "get"):
-        quacktool_config = config.custom.get("quacktool", {})
+        metadata_config = config.custom.get("quackmetadata", {})
     else:
         # Try attribute access
-        quacktool_config = getattr(config.custom, "quacktool", {})
-    return quacktool_config
+        metadata_config = getattr(config.custom, "quackmetadata", {})
+    return metadata_config
 
 
-def update_tool_config(new_config: dict[str, object]) -> None:
+def update_tool_config(new_config: dict[str, Any]) -> None:
     """
-    Update the QuackTool-specific configuration.
+    Update the QuackMetadata-specific configuration.
 
     Args:
         new_config: Dictionary containing new configuration values
@@ -227,17 +233,17 @@ def update_tool_config(new_config: dict[str, object]) -> None:
     # Handle both dictionary-based and attribute-based access
     if hasattr(config.custom, "get"):
         # Dictionary-like access
-        config.custom["quacktool"] = updated_config
+        config.custom["quackmetadata"] = updated_config
     else:
         # Attribute-based access
-        setattr(config.custom, "quacktool", updated_config)
+        setattr(config.custom, "quackmetadata", updated_config)
 
 
 def get_logger() -> logging.Logger:
     """
-    Get the QuackTool logger.
+    Get the QuackMetadata logger.
 
     Returns:
-        Logger instance for QuackTool
+        Logger instance for QuackMetadata
     """
-    return logging.getLogger("quacktool")
+    return logging.getLogger("quackmetadata")

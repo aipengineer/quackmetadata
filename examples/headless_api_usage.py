@@ -12,8 +12,8 @@ import time
 from pathlib import Path
 
 # Import directly from the package (the proper headless way)
-from quacktool import AssetConfig, ProcessingOptions, process_asset
-from quacktool.models import ProcessingMode
+from quackmetadata import AssetConfig, ProcessingOptions, process_asset
+from quackmetadata.models import ProcessingMode
 
 
 def example_direct_api_usage(input_path: Path) -> None:

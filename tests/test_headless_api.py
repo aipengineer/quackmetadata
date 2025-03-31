@@ -12,10 +12,10 @@ from unittest import mock
 import pytest
 
 # Import directly from modules to avoid lazy loading issues
-from quacktool.version import __version__
-from quacktool.config import get_config, get_logger
-from quacktool.core import process_asset
-from quacktool.models import AssetConfig, ProcessingMode, ProcessingOptions, ProcessingResult
+from quackmetadata.version import __version__
+from quackmetadata.config import get_config, get_logger
+from quackmetadata.core import process_asset
+from quackmetadata.models import AssetConfig, ProcessingMode, ProcessingOptions, ProcessingResult
 
 
 class TestHeadlessAPI:
@@ -25,7 +25,7 @@ class TestHeadlessAPI:
         """Test that all public API components are importable correctly."""
         # All these imports should work without error
         # They are defined in __all__ in __init__.py
-        from quacktool import (
+        from quackmetadata import (
             __version__,
             get_config,
             get_logger,
@@ -84,7 +84,7 @@ class TestHeadlessAPI:
     def test_headless_api_workflow(self, test_file: Path) -> None:
         """Test the complete headless API workflow."""
         # Set up mocks for process_asset internals
-        with mock.patch("quacktool.core._copy_file") as mock_copy_file:
+        with mock.patch("quackmetadata.core._copy_file") as mock_copy_file:
             # Set up mock return value
             mock_copy_file.return_value = ProcessingResult(
                 success=True,
@@ -125,4 +125,4 @@ class TestHeadlessAPI:
         # Test logger retrieval using direct import
         logger = get_logger()
         assert logger is not None
-        assert logger.name == "quacktool"
+        assert logger.name == "quackmetadata"

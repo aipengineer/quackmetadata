@@ -8,8 +8,8 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
-from quacktool.models import ProcessingMode
-from quacktool.plugin import create_plugin, QuackToolPlugin
+from quackmetadata.models import ProcessingMode
+from quackmetadata.plugin import create_plugin, QuackToolPlugin
 
 
 class TestQuackToolPlugin:

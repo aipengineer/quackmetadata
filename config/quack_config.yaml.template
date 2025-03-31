@@ -1,0 +1,36 @@
+# QuackMetadata Configuration
+
+general:
+  project_name: QuackMetadata
+
+logging:
+  level: INFO
+  file: logs/quackmetadata.log
+  console: true
+
+paths:
+  base_dir: ./
+  output_dir: ./output
+  temp_dir: ./temp
+
+integrations:
+  google:
+    client_secrets_file: config/google_client_secret.json
+    credentials_file: config/google_credentials.json
+
+  llm:
+    default_provider: openai
+    openai:
+      api_key: YOUR_OPENAI_API_KEY  # Replace with your actual API key or use environment variable
+      default_model: gpt-4o
+    anthropic:
+      api_key: YOUR_ANTHROPIC_API_KEY  # Replace with your actual API key or use environment variable
+      default_model: claude-3-opus-20240229
+    timeout: 60
+    retry_count: 3
+
+custom:
+  quackmetadata:
+    default_prompt_template: generic
+    max_retries: 3
+    output_format: json

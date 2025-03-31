@@ -12,9 +12,9 @@ from unittest import mock
 import pytest
 
 # Import function directly to avoid lazy loading
-from quacktool.core import process_asset
-from quacktool.models import AssetConfig, ProcessingMode, ProcessingOptions
-from quacktool.plugin import create_plugin
+from quackmetadata.core import process_asset
+from quackmetadata.models import AssetConfig, ProcessingMode, ProcessingOptions
+from quackmetadata.plugin import create_plugin
 
 
 class TestQuackToolIntegration:
@@ -26,7 +26,7 @@ class TestQuackToolIntegration:
         output_path = Path("output/test_processed.txt")
 
         # Using the API directly
-        with mock.patch("quacktool.core._copy_file") as mock_copy_file:
+        with mock.patch("quackmetadata.core._copy_file") as mock_copy_file:
             # Set up mock for the copy operation to avoid actual file operations
             mock_copy_file.return_value = mock.MagicMock(
                 success=True,
@@ -128,7 +128,7 @@ class TestQuackToolIntegration:
             assert file_info.exists is True
 
             # Test processing a file through QuackCore's plugin system
-            with mock.patch("quacktool.plugin.process_asset") as mock_process:
+            with mock.patch("quackmetadata.plugin.process_asset") as mock_process:
                 mock_process.return_value = mock.MagicMock(
                     success=True,
                     output_path=Path("output/result.txt"),
@@ -149,7 +149,7 @@ class TestCliIntegration:
             self, mock_process_asset: mock.MagicMock, test_file: Path
     ) -> None:
         """Test that CLI correctly interfaces with core processing."""
-        from quacktool.demo_cli import cli  # Import the CLI group, not the function
+        from quackmetadata.demo_cli import cli  # Import the CLI group, not the function
         from click.testing import CliRunner
 
         # Set up the mock return value

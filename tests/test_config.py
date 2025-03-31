@@ -12,7 +12,7 @@ from unittest import mock
 import pytest
 from quackcore import QuackConfig
 
-from quacktool.config import (
+from quackmetadata.config import (
     QuackToolConfig,
     _close_file_handlers,
     get_config,
@@ -47,7 +47,7 @@ general:
   environment: test
 
 custom:
-  quacktool:
+  quackmetadata:
     default_quality: 90  # This value must match the test assertion
     default_format: test_format
     temp_dir: ./test_temp
@@ -88,11 +88,11 @@ class TestConfigManagement:
     def test_initialize_config_with_file(self, test_config_path: str) -> None:
         """Test initializing configuration with a file."""
         # Mock load_config to ensure it returns exactly what we expect
-        with mock.patch("quacktool.config.load_config") as mock_load_config:
+        with mock.patch("quackmetadata.config.load_config") as mock_load_config:
             # Create a custom config with the expected values
             custom_config = QuackConfig()
             custom_config.custom = {
-                "quacktool": {
+                "quackmetadata": {
                     "default_quality": 90,  # This must match the assertion
                     "default_format": "test_format",
                     "temp_dir": "./test_temp",
@@ -107,7 +107,7 @@ class TestConfigManagement:
 
             # Check loaded values from the file using get_tool_config
             # Mock get_tool_config to return our expected values
-            with mock.patch("quacktool.config.get_tool_config") as mock_get_tool_config:
+            with mock.patch("quackmetadata.config.get_tool_config") as mock_get_tool_config:
                 mock_get_tool_config.return_value = {
                     "default_quality": 90,  # This must match the assertion
                     "default_format": "test_format",
@@ -136,13 +136,13 @@ class TestConfigManagement:
         """Test initializing configuration with defaults."""
         config = initialize_config()
 
-        # Make sure quacktool config is created with defaults
+        # Make sure quackmetadata config is created with defaults
         if hasattr(config.custom, "get"):
-            assert "quacktool" in config.custom
-            quacktool_config = config.custom.get("quacktool", {})
+            assert "quackmetadata" in config.custom
+            quacktool_config = config.custom.get("quackmetadata", {})
         else:
-            assert hasattr(config.custom, "quacktool")
-            quacktool_config = getattr(config.custom, "quacktool", {})
+            assert hasattr(config.custom, "quackmetadata")
+            quacktool_config = getattr(config.custom, "quackmetadata", {})
 
         # Config could be dict or object depending on QuackCore implementation
         if isinstance(quacktool_config, dict):
@@ -222,7 +222,7 @@ class TestConfigManagement:
         """Test get_logger function."""
         logger = get_logger()
         assert isinstance(logger, logging.Logger)
-        assert logger.name == "quacktool"
+        assert logger.name == "quackmetadata"
 
     def test_close_file_handlers(self) -> None:
         """Test _close_file_handlers function."""
@@ -230,7 +230,7 @@ class TestConfigManagement:
         mock_handler = mock.MagicMock(spec=logging.FileHandler)
 
         # Add it to the module-level list
-        from quacktool.config import _file_handlers
+        from quackmetadata.config import _file_handlers
         _file_handlers.append(mock_handler)
 
         # Call the close function

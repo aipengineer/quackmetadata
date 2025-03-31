@@ -7,7 +7,7 @@ import re
 from io import StringIO
 from unittest import mock
 
-from quacktool.version import __version__, display_version_info
+from quackmetadata.version import __version__, display_version_info
 
 
 class TestVersionModule:

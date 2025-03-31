@@ -9,10 +9,10 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from quacktool.demo_cli import (
+from quackmetadata.demo_cli import (
     cli,  # This is the click.Group we need to use
 )
-from quacktool.models import AssetType, ProcessingMode, ProcessingResult
+from quackmetadata.models import AssetType, ProcessingMode, ProcessingResult
 
 
 @pytest.fixture
@@ -156,7 +156,7 @@ class TestQuackToolCli:
 
             with mock.patch("pathlib.Path.exists", return_value=True):
                 # Set up a side effect that actually raises SystemExit
-                with mock.patch("quacktool.demo_cli.print_error") as mock_print_error:
+                with mock.patch("quackmetadata.demo_cli.print_error") as mock_print_error:
                     mock_print_error.side_effect = SystemExit(1)
 
                     # Use CliRunner with catch_exceptions=True (default) to properly handle SystemExit

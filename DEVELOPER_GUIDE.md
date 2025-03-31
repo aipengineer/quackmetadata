@@ -38,7 +38,7 @@ The public API is deliberately minimal:
 
 ```python
 # Import directly - this is how QuackBuddy would use QuackTool
-from quacktool import process_asset, AssetConfig, ProcessingOptions
+from quackmetadata import process_asset, AssetConfig, ProcessingOptions
 ```
 
 ### Core Processing Function
@@ -64,7 +64,7 @@ QuackTool registers a plugin with QuackCore:
 ```python
 # In pyproject.toml
 [project.entry-points."quackcore.plugins"]
-quacktool = "quacktool.plugin:create_plugin"
+quacktool = "quackmetadata.plugin:create_plugin"
 ```
 
 ## Python 3.13 Best Practices
@@ -90,8 +90,8 @@ To create a new QuackTool:
 
 1. **Clone this Repository**:
    ```bash
-   git clone https://github.com/yourusername/quacktool.git my-quacktool
-   cd my-quacktool
+   git clone https://github.com/yourusername/quacktool.git my-quackmetadata
+   cd my-quackmetadata
    ```
 
 2. **Rename the Package**:

@@ -14,8 +14,8 @@ from unittest import mock
 import hypothesis
 from hypothesis import given, strategies as st
 
-from quacktool.core import _detect_by_extension, _generate_output_path, process_asset
-from quacktool.models import (
+from quackmetadata.core import _detect_by_extension, _generate_output_path, process_asset
+from quackmetadata.models import (
     AssetConfig,
     AssetType,
     ProcessingMode,
@@ -226,8 +226,8 @@ class TestPropertyBased:
         input_path = Path(filename)
 
         # Test with proper mocking for generate_output_path
-        with mock.patch("quacktool.core.resolver.resolve_project_path") as mock_resolve:
-            with mock.patch("quacktool.core.get_tool_config") as mock_config:
+        with mock.patch("quackmetadata.core.resolver.resolve_project_path") as mock_resolve:
+            with mock.patch("quackmetadata.core.get_tool_config") as mock_config:
                 mock_config.return_value = {"output_dir": "./output"}
                 mock_resolve.return_value = Path("./output")
 
@@ -251,8 +251,8 @@ class TestPropertyBased:
         for asset_type in list(AssetType):
             # Set up mocks
             with mock.patch("pathlib.Path.exists", return_value=True):
-                with mock.patch("quacktool.core._generate_output_path") as mock_generate_output:
-                    with mock.patch("quacktool.core._process_by_type_and_mode") as mock_process:
+                with mock.patch("quackmetadata.core._generate_output_path") as mock_generate_output:
+                    with mock.patch("quackmetadata.core._process_by_type_and_mode") as mock_process:
                         # Configure mocks
                         output_path = Path("output/test.txt")
                         mock_generate_output.return_value = output_path
@@ -291,8 +291,8 @@ class TestPropertyBased:
                 continue
 
             # Set up mocks
-            with mock.patch("quacktool.core.fs.get_file_info") as mock_file_info:
-                with mock.patch("quacktool.core.fs.copy") as mock_copy:
+            with mock.patch("quackmetadata.core.fs.get_file_info") as mock_file_info:
+                with mock.patch("quackmetadata.core.fs.copy") as mock_copy:
                     # Configure mocks
                     mock_file_info.return_value = mock.MagicMock(
                         success=True,
@@ -307,7 +307,7 @@ class TestPropertyBased:
                         output_path = Path("output/test.txt")
 
                         # Mock _generate_output_path to avoid config issues
-                        with mock.patch("quacktool.core._generate_output_path") as mock_generate:
+                        with mock.patch("quackmetadata.core._generate_output_path") as mock_generate:
                             mock_generate.return_value = output_path
 
                             # Create config with the given mode
@@ -318,7 +318,7 @@ class TestPropertyBased:
                             )
 
                             # Mock additional functions to avoid actual processing
-                            with mock.patch("quacktool.core._process_by_type_and_mode") as mock_process:
+                            with mock.patch("quackmetadata.core._process_by_type_and_mode") as mock_process:
                                 mock_process.return_value = ProcessingResult(
                                     success=True,
                                     output_path=output_path,

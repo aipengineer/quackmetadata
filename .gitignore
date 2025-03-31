@@ -194,3 +194,13 @@ site/
 
 # QuackTool specific output
 *.processed.*
+
+# Google API credentials
+config/client_secret.json
+config/credentials.json
+
+# User configuration files
+config/quack_config.yaml
+
+# Keep template files
+!config/quack_config.yaml.template

@@ -1,0 +1,46 @@
+You are an assistant extracting structured metadata from a document.
+
+Here is the content:
+---
+{{content}}
+---
+
+Extract the following fields:
+- Title: Determine the best title for this document
+- Summary: Write a concise summary (100-300 words)
+- Author style: Describe the writing style (e.g., concise, academic, poetic, technical)
+- Tone: Identify the emotional tone (e.g., serious, humorous, critical)
+- Language: Identify the primary language
+- Domain: Specify the subject domain (e.g., politics, philosophy, food, technology)
+- Estimated date: If you can guess when this was written, provide a date or time period
+- Rarity: Rate this document using one of these categories: 🟢 Common, 🔴 Rare, 🟣 Legendary
+
+Now, generate a fictional author profile:
+- Name: A plausible name for the author
+- Profession: What might be their occupation
+- Writing style: Distinctive writing characteristics
+- Possible age range: Estimated age of the author
+- Location guess: Likely geographic location of the author
+
+Return everything in **valid JSON** using exactly this structure:
+```json
+{
+  "title": "...",
+  "summary": "...",
+  "author_style": "...",
+  "tone": "...",
+  "language": "...",
+  "domain": "...",
+  "estimated_date": "...",
+  "rarity": "...",
+  "author_profile": {
+    "name": "...",
+    "profession": "...",
+    "writing_style": "...",
+    "possible_age_range": "...",
+    "location_guess": "..."
+  }
+}
+```
+
+Make sure to return only valid JSON that conforms to the schema. Include nothing else in your response.

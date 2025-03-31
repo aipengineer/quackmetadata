@@ -1,4 +1,4 @@
-# src/quacktool/version.py
+# src/quackmetadata/version.py
 """
 Version information for QuackTool.
 
@@ -10,7 +10,7 @@ from typing import Any, TypeVar
 
 from rich.console import Console
 
-# Define version here directly instead of importing from quacktool
+# Define version here directly instead of importing from quackmetadata
 __version__ = "0.1.0"
 
 # Type variable for generic context and parameter types
