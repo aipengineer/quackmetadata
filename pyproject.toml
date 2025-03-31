@@ -51,13 +51,13 @@ dev = [
 "Bug Tracker" = "https://github.com/yourusername/quacktool/issues"
 
 [project.scripts]
-quacktool = "quacktool.cli:main"
+quacktool = "quackmetada.cli:main"
 
 [tool.hatch.version]
 path = "src/quacktool/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/quacktool"]
+packages = ["src/quackmetadata"]
 
 # Add this section to allow direct references in dependencies
 [tool.hatch.metadata]
@@ -115,10 +115,10 @@ strict_optional = true
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 filterwarnings = ["error"]
-addopts = "-v --cov=quacktool --cov-report=term-missing"
+addopts = "-v --cov=quackmetadata --cov-report=term-missing"
 
 [tool.coverage.run]
-source = ["quacktool"]
+source = ["quackmetadata"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
@@ -131,4 +131,4 @@ exclude_lines = [
 ]
 
 [project.entry-points."quackcore.plugins"]
-quacktool = "quacktool.plugin:create_plugin"
+quacktool = "quackmetadata.plugin:create_plugin"
