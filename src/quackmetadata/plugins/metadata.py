@@ -243,7 +243,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
         self.logger.info(f"Downloading file from Google Drive with ID: {file_id}")
 
         download_result = self._drive_service.download_file(
-            remote_id=file_id,
+            remote_id=file_id,  # This parameter name is correct
             local_path=self._temp_dir
         )
 
@@ -255,8 +255,9 @@ class MetadataPlugin(QuackToolPluginProtocol):
         local_path = download_result.content
         self.logger.info(f"Downloaded file to: {local_path}")
 
-        # Get file metadata from Google Drive
-        file_info_result = self._drive_service.get_file_info(file_id)
+        # Get file metadata from Google Drive - Fix parameter name here
+        # Change from file_id to remote_id to match the method signature
+        file_info_result = self._drive_service.get_file_info(remote_id=file_id)
         if not file_info_result.success:
             return IntegrationResult.error_result(
                 f"Failed to get file info from Google Drive: {file_info_result.error}"
@@ -277,7 +278,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
 
                 upload_result = self._drive_service.upload_file(
                     file_path=metadata_path,
-                    parent_path=parent_id
+                    parent_folder_id=parent_id
                 )
 
                 if upload_result.success:
