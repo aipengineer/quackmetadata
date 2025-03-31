@@ -44,7 +44,7 @@ def display_version_info(
         param_name = getattr(param, "name", "version") if param else "version"
 
         console.print(
-            "\n[bold green]QuackTool[/bold green] - A QuackVerse Automation Tool"
+            "\n[bold green]QuackMetadata[/bold green] - A QuackVerse Automation Tool"
         )
         console.print(f"Version: [cyan]{__version__}[/cyan]")
         console.print(f"QuackCore Version: [cyan]{quackcore.__version__}[/cyan]")

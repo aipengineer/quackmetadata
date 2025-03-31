@@ -185,6 +185,8 @@ setup.sh
 *.pem
 credentials.json
 client_secrets.json
+google_client_secret.json
+google_credentials.json
 token.json
 .env
 

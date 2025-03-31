@@ -15,9 +15,11 @@ paths:
 
 integrations:
   google:
-    client_secrets_file: config/google_client_secret.json
+    client_secrets_file: config/client_secret.json
     credentials_file: config/google_credentials.json
-    #shared_folder_id: your_shared_folder_id  # Optional
+    #Drive-specific settings
+    #drive:
+      #shared_folder_id: your_shared_folder_id  # Optional
 
   llm:
     default_provider: openai

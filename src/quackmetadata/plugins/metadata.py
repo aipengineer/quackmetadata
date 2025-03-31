@@ -15,20 +15,23 @@ import time
 from pathlib import Path
 from typing import Any, cast, Protocol
 
-
 from pydantic import ValidationError
+from quackcore.errors import QuackApiError, QuackIntegrationError
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.integrations.google.drive import GoogleDriveService
-from quackcore.integrations.llms import ChatMessage, LLMOptions, RoleType, create_integration
+from quackcore.integrations.llms import ChatMessage, LLMOptions, RoleType, \
+    create_integration, MockLLMClient
 
 from quackmetadata.protocols import QuackToolPluginProtocol
 from quackmetadata.schemas.metadata import Metadata
 from quackmetadata.utils.prompt_engine import render_prompt, get_template_path
 from quackmetadata.utils.rarity import calculate_rarity
 
+
 # Define the SupportsWrite protocol
 class SupportsWrite(Protocol):
     def write(self, s: str) -> int: ...
+
 
 class MetadataPluginError(Exception):
     """Exception raised for errors in the MetadataPlugin."""
@@ -55,6 +58,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
         self._temp_dir = tempfile.mkdtemp(prefix="quackmetadata_")
         self._output_dir = Path("./output")
         self._output_dir.mkdir(exist_ok=True, parents=True)
+        self._using_mock = False
 
     @property
     def logger(self) -> logging.Logger:
@@ -84,6 +88,9 @@ class MetadataPlugin(QuackToolPluginProtocol):
             )
 
         try:
+            # Initialize environment from config
+            self._initialize_environment()
+
             # Initialize Google Drive integration
             self._drive_service = GoogleDriveService()
             drive_result = self._drive_service.initialize()
@@ -93,22 +100,66 @@ class MetadataPlugin(QuackToolPluginProtocol):
                 )
 
             # Initialize LLM integration
-            self._llm_service = create_integration()
-            llm_result = self._llm_service.initialize()
-            if not llm_result.success:
-                return IntegrationResult.error_result(
-                    f"Failed to initialize LLM service: {llm_result.error}"
-                )
+            try:
+                self._llm_service = create_integration()
+                llm_result = self._llm_service.initialize()
+                if not llm_result.success:
+                    error_message = f"Failed to initialize LLM service: {llm_result.error}"
+
+                    # Add helpful context if it's an API key issue
+                    if "API key not provided" in str(llm_result.error):
+                        error_message += (
+                            "\nPlease ensure your API key is properly configured in "
+                            "quack_config.yaml or as an environment variable."
+                        )
+
+                    raise QuackIntegrationError(error_message)
+
+            except QuackIntegrationError as e:
+                # Provide helpful error message about configuration
+                if "API key not provided" in str(e):
+                    self.logger.error(
+                        "LLM API key missing. Please configure it in quack_config.yaml "
+                        "under integrations.llm.openai.api_key or set the OPENAI_API_KEY "
+                        "environment variable."
+                    )
+
+                # If no API key, fall back to MockLLMClient
+                self.logger.warning(
+                    "Falling back to MockLLMClient for development/testing")
+                self._llm_service = MockLLMClient()
+                self._using_mock = True
 
             self._initialized = True
-            return IntegrationResult.success_result(
-                message="MetadataPlugin initialized successfully"
-            )
+
+            if self._using_mock:
+                return IntegrationResult.success_result(
+                    message=(
+                        "MetadataPlugin initialized with MockLLMClient. "
+                        "Note: Results will be simulated, not real metadata extraction."
+                    )
+                )
+            else:
+                return IntegrationResult.success_result(
+                    message="MetadataPlugin initialized successfully"
+                )
+
         except Exception as e:
             self.logger.exception("Failed to initialize MetadataPlugin")
             return IntegrationResult.error_result(
                 f"Failed to initialize MetadataPlugin: {str(e)}"
             )
+
+    def _initialize_environment(self) -> None:
+        """
+        Initialize environment variables from configuration.
+        """
+        try:
+            # Import quacktool's environment initialization
+            from quackmetadata import initialize
+            initialize()
+        except Exception as e:
+            self.logger.warning(f"Failed to initialize environment: {e}")
 
     def is_available(self) -> bool:
         """
@@ -146,6 +197,13 @@ class MetadataPlugin(QuackToolPluginProtocol):
                 return init_result
 
         options = options or {}
+
+        # Print a warning if using mock LLM
+        if self._using_mock:
+            self.logger.warning(
+                "Using MockLLMClient - results will be simulated, not real metadata extraction. "
+                "Configure your LLM API key to use actual language models."
+            )
 
         try:
             # Check if the file_path is a Google Drive ID
@@ -290,20 +348,26 @@ class MetadataPlugin(QuackToolPluginProtocol):
             # Write metadata to file - fixed to correctly type the file object
             self.logger.info(f"Writing metadata to: {metadata_path}")
             with open(metadata_path, "w", encoding="utf-8") as f:
-                # Cast the file object to SupportsWrite[str] explicitly
+                # Cast the file object to SupportsWrite explicitly
                 json_file = cast(SupportsWrite, f)
                 json.dump(metadata.model_dump(), json_file, indent=2)
 
             # Create a card representation
             card = self._create_metadata_card(metadata)
 
+            # Add a note if using mock LLM
+            message = f"Successfully extracted metadata from {path.name}"
+            if self._using_mock:
+                message += " (using mock data - not actual language model analysis)"
+
             return IntegrationResult.success_result(
                 content={
                     "metadata": metadata.model_dump(),
                     "metadata_path": str(metadata_path),
-                    "card": card
+                    "card": card,
+                    "using_mock": self._using_mock
                 },
-                message=f"Successfully extracted metadata from {path.name}"
+                message=message
             )
 
         except Exception as e:
@@ -374,6 +438,15 @@ class MetadataPlugin(QuackToolPluginProtocol):
 
                 if not result.success:
                     self.logger.error(f"LLM call failed: {result.error}")
+
+                    # Check if it's an API key issue
+                    if "API key" in str(result.error):
+                        return IntegrationResult.error_result(
+                            f"LLM API key error: {result.error}. "
+                            f"Please configure your API key in quack_config.yaml or "
+                            f"set the appropriate environment variable."
+                        )
+
                     if attempt < max_retries - 1:
                         time.sleep(1)  # Brief pause before retry
                         continue
@@ -497,6 +570,11 @@ class MetadataPlugin(QuackToolPluginProtocol):
         card.append(f"║ Domain: {domain[:28]}{' ' * (28 - min(28, len(domain)))}║")
         card.append(f"║ Tone: {tone[:31]}{' ' * (31 - min(31, len(tone)))}║")
         card.append(f"║ Rarity: {rarity[:29]}{' ' * (29 - min(29, len(rarity)))}║")
+
+        # Add a note if using mock LLM
+        if self._using_mock:
+            card.append("╠══════════════════════════════════════════╣")
+            card.append("║ ⚠️ USING MOCK LLM - DATA IS SIMULATED ⚠️  ║")
 
         card.append("╚══════════════════════════════════════════╝")
 

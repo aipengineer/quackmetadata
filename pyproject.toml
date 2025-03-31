@@ -31,6 +31,9 @@ dependencies = [
     "rich>=13.6.0",
     "click>=8.1.7",
     "pystache",
+    "openai",
+    "anthropic",
+    "tiktoken",
 
 ]
 
