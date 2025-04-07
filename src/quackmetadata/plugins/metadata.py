@@ -424,7 +424,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
 
         # LLM options
         llm_options = LLMOptions(
-            temperature=0.1,  # Low temperature for more consistent output
+            temperature=1,  # Low temperature for more consistent output
             max_tokens=2000  # Enough for detailed metadata
         )
 

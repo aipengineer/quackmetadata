@@ -18,10 +18,18 @@ from quackcore.cli import (
 from quackmetadata.plugins.metadata import MetadataPlugin
 from quackmetadata.version import display_version_info, __version__
 from quackmetadata.commands.metadata_cli import metadata_cli
+from quackmetadata.config import get_config
+
+# Get project name from config or use default
+try:
+    config = get_config()
+    PROJECT_NAME = getattr(config.general, "project_name", "QuackTool")
+except:
+    PROJECT_NAME = "QuackTool"  # Fallback to default
 
 # Create an actual Click group object (not a decorated function)
 # This creates an instance of click.Group that can be used in tests
-cli = click.Group(name="quackmetadata")
+cli = click.Group(name=PROJECT_NAME.lower())
 
 
 # Main command decorator
@@ -52,9 +60,9 @@ cli = click.Group(name="quackmetadata")
 )
 @click.version_option(
     version=__version__,
-    prog_name="QuackMetadata",
+    prog_name=PROJECT_NAME,
     callback=display_version_info,
-    message="QuackMetadata version %(version)s"
+    message=f"{PROJECT_NAME} version %(version)s"
 )
 @click.pass_context
 def main_command(
@@ -65,7 +73,7 @@ def main_command(
         quiet: bool,
 ) -> None:
     """
-    QuackMetadata Demo CLI - For development/testing purposes only.
+    Demo CLI - For development/testing purposes only.
 
     In production, use QuackBuddy as the user-facing CLI instead.
     This CLI is included only as a reference implementation and for teaching.
@@ -76,7 +84,7 @@ def main_command(
         verbose=verbose,
         debug=debug,
         quiet=quiet,
-        app_name="quackmetadata",
+        app_name=PROJECT_NAME.lower(),
     )
 
     # Store the context for use in subcommands
@@ -136,8 +144,8 @@ def extract_command(
     INPUT_FILE can be a local file path or a Google Drive file ID.
 
     Examples:
-        quackmetadata extract myfile.txt
-        quackmetadata extract 1abc2defg3hij --dry-run
+        extract myfile.txt
+        extract 1abc2defg3hij --dry-run
     """
     logger = ctx.obj["logger"]
     logger.info(f"Extracting metadata from: {input_file}")
@@ -149,7 +157,7 @@ def extract_command(
     init_result = plugin.initialize()
 
     if not init_result.success:
-        print_error(f"Failed to initialize metadata plugin: {init_result.error}",
+        print_error(f"Failed to initialize {PROJECT_NAME.lower()} plugin: {init_result.error}",
                     exit_code=1)
 
     # Process options
@@ -218,7 +226,7 @@ def main() -> None:
     NOTE: This main function is for testing/development only.
     In production, QuackBuddy should be used instead.
     """
-    print("📝 QuackMetadata - Extract structured metadata from documents")
+    print(f"📝 {PROJECT_NAME} - Extract structured metadata from documents")
     print("NOTE: This CLI is for development/teaching purposes only.")
     print("")
     cli(obj={})
