@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, cast, Protocol
 
 from pydantic import ValidationError
-from quackcore.errors import QuackApiError, QuackIntegrationError
+from quackcore.errors import QuackIntegrationError
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.integrations.google.drive import GoogleDriveService
 from quackcore.integrations.llms import ChatMessage, LLMOptions, RoleType, \

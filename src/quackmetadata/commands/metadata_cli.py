@@ -1,4 +1,3 @@
-# src/quackmetadata/commands/metadata_cli.py
 """
 Command-line interface for the QuackMetadata tool.
 
@@ -7,7 +6,6 @@ to extract metadata from text files using LLMs and interact with Google Drive.
 """
 
 import json
-
 import click
 from quackcore.cli import (
     handle_errors,
@@ -16,9 +14,8 @@ from quackcore.cli import (
     print_info,
     print_success,
 )
-
 from quackmetadata.plugins.metadata import MetadataPlugin
-
+from typing import cast
 
 @click.group(name="metadata")
 @click.option(
@@ -67,6 +64,9 @@ def metadata_cli(
         "config": quack_ctx.config,
         "verbose": verbose
     }
+
+# Cast the decorated function to a click.Group so that type checkers recognize it as a Command.
+metadata_cli = cast(click.Group, metadata_cli)
 
 
 @metadata_cli.command("extract")

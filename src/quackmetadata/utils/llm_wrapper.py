@@ -8,7 +8,7 @@ and ensure graceful fallbacks.
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 from quackcore.integrations.llms import (
     MockLLMClient,
