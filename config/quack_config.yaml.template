@@ -22,13 +22,16 @@ integrations:
       #shared_folder_id: your_shared_folder_id  # Optional
 
   llm:
-    default_provider: openai
+    default_provider: ollama
     openai:
       api_key: YOUR_OPENAI_API_KEY  # Replace with your actual API key or use environment variable
       default_model: gpt-4o
     anthropic:
       api_key: YOUR_ANTHROPIC_API_KEY  # Replace with your actual API key or use environment variable
       default_model: claude-3-opus-20240229
+    ollama:
+      api_key: YOUR_OLLAMA_KEY  # Replace with your actual API key or use environment variable
+      default_model: llama3.2:latest
     timeout: 60
     retry_count: 3
 
