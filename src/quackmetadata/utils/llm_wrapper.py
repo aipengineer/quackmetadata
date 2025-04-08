@@ -6,7 +6,6 @@ This module provides wrappers for LLM clients to handle import errors
 and ensure graceful fallbacks.
 """
 
-import logging
 import os
 from typing import Any
 
@@ -14,7 +13,9 @@ from quackcore.integrations.llms import (
     MockLLMClient,
 )
 
-logger = logging.getLogger(__name__)
+from quackcore.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_llm_integration(force_mock: bool = False) -> Any:

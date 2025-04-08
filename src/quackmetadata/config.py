@@ -246,4 +246,5 @@ def get_logger() -> logging.Logger:
     Returns:
         Logger instance for QuackMetadata
     """
-    return logging.getLogger("quackmetadata")
+    from quackcore.logging import get_logger
+    return get_logger("quackmetadata")

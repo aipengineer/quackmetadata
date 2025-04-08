@@ -6,13 +6,13 @@ This module provides factory functions for creating plugin instances
 that can be discovered by QuackCore's plugin system.
 """
 
-import logging
 from typing import cast
 
+from quackcore.logging import get_logger
 from quackmetadata.plugins.metadata import MetadataPlugin
 from quackmetadata.protocols import QuackToolPluginProtocol
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Global instance reference for singleton pattern
 _plugin_instance = None
