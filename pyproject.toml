@@ -50,8 +50,8 @@ dev = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/yourusername/quacktool"
-"Bug Tracker" = "https://github.com/yourusername/quacktool/issues"
+"Homepage" = "https://github.com/aipengineer/quacktool"
+"Bug Tracker" = "https://github.com/aipengineer/quacktool/issues"
 
 [project.scripts]
 quacktool = "quackmetadata.cli:main"

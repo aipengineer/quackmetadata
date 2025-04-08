@@ -125,6 +125,15 @@ structure: ## Show project structure
 	fi
 	@echo "${RESET}"
 
+.PHONY: prune-branches
+prune-branches: ## Remove local branches that are no longer tracked on the remote
+	@echo "${BLUE}Pruning local branches that are no longer tracked on the remote...${RESET}"
+	@git fetch -p && \
+	  for branch in $$(git branch -vv | grep ': gone]' | awk '{print $$1}'); do \
+	    git branch -D $$branch; \
+	  done
+	@echo "${GREEN}Stale branches have been removed.${RESET}"
+
 .PHONY: add-paths
 add-paths: ## Add file paths as first-line comments to all Python files
 	@echo "${BLUE}Adding file paths as comments to Python files...${RESET}"
