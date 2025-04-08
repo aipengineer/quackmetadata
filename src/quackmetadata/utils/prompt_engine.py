@@ -1,3 +1,4 @@
+# src/quackmetadata/utils/prompt_engine.py
 """
 Prompt rendering utilities for QuackMetadata.
 

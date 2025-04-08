@@ -1,3 +1,4 @@
+# src/quackmetadata/plugins/metadata.py
 """
 QuackMetadata plugin for metadata extraction.
 

@@ -1,4 +1,4 @@
-# src/quackmetadata/init.py
+# src/quackmetadata/__init__.py
 """
 Initialization module for QuackMetadata.
 

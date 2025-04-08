@@ -1,24 +1,25 @@
-# Modify plugin.py to handle multiple initialization attempts better
-
+# src/quackmetadata/plugin.py
 import inspect
-import logging
 import os
 import tempfile
+from logging import Logger
 from typing import Any, cast
-from pathlib import Path
 
 from quackcore.integrations.core.results import IntegrationResult
-
+from quackcore.logging import get_logger
 from quackmetadata.plugins.metadata import MetadataPlugin
 from quackmetadata.protocols import QuackToolPluginProtocol
 
-# Module-level dictionary to track registrations
-_PLUGIN_REGISTRY: dict[str, QuackToolPluginProtocol] = {}
-_LOGGER = logging.getLogger(__name__)
+# Import QuackCore FS service and helper functions.
+from quackcore.fs import service as fs, join_path
 
-# Add a lock file mechanism to detect multiple instances
-_LOCK_DIR = Path(tempfile.gettempdir()) / "quackmetadata"
-_LOCK_FILE = _LOCK_DIR / "instance.lock"
+# Module-level dictionary to track registrations.
+_PLUGIN_REGISTRY: dict[str, QuackToolPluginProtocol] = {}
+_LOGGER = get_logger(__name__)
+
+# Build lock directory and lock file paths using fs.join_path.
+_LOCK_DIR = join_path(tempfile.gettempdir(), "quackmetadata")
+_LOCK_FILE = join_path(_LOCK_DIR, "instance.lock")
 
 
 def _check_other_instances() -> tuple[bool, str]:
@@ -29,83 +30,72 @@ def _check_other_instances() -> tuple[bool, str]:
         Tuple of (is_another_instance_running, message)
     """
     try:
-        # Create lock directory if it doesn't exist
-        _LOCK_DIR.mkdir(parents=True, exist_ok=True)
+        # Ensure the lock directory exists.
+        fs.create_directory(_LOCK_DIR, exist_ok=True)
 
-        # Check if lock file exists and is recent (less than 10 minutes old)
-        if _LOCK_FILE.exists():
-            # Get file modification time
-            mtime = _LOCK_FILE.stat().st_mtime
+        # Check if lock file exists using FS.
+        lock_info = fs.get_file_info(_LOCK_FILE)
+        if lock_info.success and lock_info.exists:
+            # Get file modification time.
+            mtime = lock_info.stats.st_mtime if hasattr(lock_info, "stats") else None
             import time
             current_time = time.time()
 
-            # If the lock file is recent (less than 10 minutes old)
-            if current_time - mtime < 600:  # 10 minutes in seconds
-                # Read PID from lock file
-                try:
-                    with open(_LOCK_FILE, 'r') as f:
-                        pid = f.read().strip()
+            if mtime is not None and current_time - mtime < 600:  # 10 minutes
+                # Read PID from lock file.
+                read_result = fs.read_text(_LOCK_FILE, encoding="utf-8")
+                if read_result.success:
+                    pid = read_result.content.strip()
                     return True, f"Another instance appears to be running (PID: {pid})"
-                except:
+                else:
                     return True, "Another instance appears to be running"
-            # Lock file is old, we can overwrite it
 
-        # Write current PID to lock file
-        with open(_LOCK_FILE, 'w') as f:
-            f.write(str(os.getpid()))
-
+        # Write current PID to the lock file atomically.
+        write_result = fs.write_text(_LOCK_FILE, str(os.getpid()), encoding="utf-8", atomic=True)
+        if not write_result.success:
+            _LOGGER.warning(f"Failed to write lock file: {write_result.error}")
         return False, "No other instances detected"
 
     except Exception as e:
         _LOGGER.warning(f"Error checking for other instances: {e}")
-        # Continue even if we can't check for other instances
+        # Continue even if we can't check.
         return False, f"Could not check for other instances: {e}"
 
 
 class QuackMetadataPlugin(QuackToolPluginProtocol):
     """Plugin implementation for QuackMetadata."""
 
-    _instance = None  # Class-level instance tracking
-    _logger = None  # Class-level logger instance
-    _metadata_plugin = None  # Metadata plugin instance
-    _project_name = "QuackTool"  # Default name if config can't be loaded
+    _instance = None  # Class-level instance tracking.
+    _logger = None  # Class-level logger instance.
+    _metadata_plugin = None  # Metadata plugin instance.
+    _project_name = "QuackTool"  # Default name if config can't be loaded.
 
     def __new__(cls):
         """Implement singleton pattern at the class level."""
         if cls._instance is None:
             cls._instance = super(QuackMetadataPlugin, cls).__new__(cls)
-            cls._instance._initialized = False  # Initialize the instance attributes
-            cls._logger = logging.getLogger(
-                __name__)  # Initialize the logger at class level
-
-            # Try to load the project name from config
+            cls._instance._initialized = False
+            cls._logger = get_logger(__name__)
+            # Try to load the project name from config.
             try:
                 from quackcore.config import load_config
                 config = load_config()
-                if hasattr(config, "general") and hasattr(config.general,
-                                                          "project_name"):
+                if hasattr(config, "general") and hasattr(config.general, "project_name"):
                     cls._project_name = config.general.project_name
             except Exception as e:
                 cls._logger.debug(f"Could not load project name from config: {e}")
-                # Keep using the default name
-
         return cls._instance
 
     def __init__(self) -> None:
         """Initialize the plugin if not already initialized."""
-        # Skip initialization if already done
         if hasattr(self, "_initialized") and self._initialized:
             return
-
-        # Don't set self.logger directly, it's a property
-        # Make sure _initialized is set to False initially
         self._initialized = False
         self._metadata_plugin = None
 
     @property
-    def logger(self) -> logging.Logger:
+    def logger(self) -> Logger:
         """Get the logger for the plugin."""
-        # Return the class-level logger
         return self.__class__._logger
 
     @property
@@ -126,7 +116,7 @@ class QuackMetadataPlugin(QuackToolPluginProtocol):
             IntegrationResult indicating success or failure.
         """
         try:
-            # Check for other instances
+            # Check for other instances.
             other_instance_running, message = _check_other_instances()
             if other_instance_running:
                 return IntegrationResult.error_result(
@@ -134,13 +124,11 @@ class QuackMetadataPlugin(QuackToolPluginProtocol):
                     f"Please close other CLI sessions using QuackMetadata and try again."
                 )
 
-            # Initialize the metadata plugin
+            # Initialize the metadata plugin.
             self._metadata_plugin = MetadataPlugin()
             init_result = self._metadata_plugin.initialize()
-
             if not init_result.success:
                 return init_result
-
             self._initialized = True
             return IntegrationResult.success_result(
                 message=f"{self.__class__._project_name} plugin initialized successfully"
@@ -160,12 +148,7 @@ class QuackMetadataPlugin(QuackToolPluginProtocol):
         """
         return self._initialized
 
-    def process_file(
-            self,
-            file_path: str,
-            output_path: str | None = None,
-            options: dict[str, Any] | None = None,
-    ) -> IntegrationResult:
+    def process_file(self, file_path: str, output_path: str | None = None, options: dict[str, Any] | None = None) -> IntegrationResult:
         """
         Process a file using QuackMetadata.
 
@@ -181,11 +164,8 @@ class QuackMetadataPlugin(QuackToolPluginProtocol):
             init_result = self.initialize()
             if not init_result.success:
                 return init_result
-
         try:
             self.logger.info(f"Processing file: {file_path}")
-
-            # Delegate to the metadata plugin
             if self._metadata_plugin:
                 return self._metadata_plugin.process_file(
                     file_path=file_path,
@@ -193,29 +173,20 @@ class QuackMetadataPlugin(QuackToolPluginProtocol):
                     options=options
                 )
             else:
-                return IntegrationResult.error_result(
-                    "Metadata plugin not initialized"
-                )
-
+                return IntegrationResult.error_result("Metadata plugin not initialized")
         except Exception as e:
             self.logger.error(f"Error processing file: {e}")
-            return IntegrationResult.error_result(
-                f"Error processing file: {str(e)}"
-            )
+            return IntegrationResult.error_result(f"Error processing file: {str(e)}")
 
     def __del__(self):
         """Clean up resources when the plugin is garbage collected."""
         try:
-            # Remove lock file if it exists and contains our PID
-            if _LOCK_FILE.exists():
-                try:
-                    with open(_LOCK_FILE, 'r') as f:
-                        pid = f.read().strip()
-                    if pid == str(os.getpid()):
-                        _LOCK_FILE.unlink()
-                except:
-                    pass
-        except:
+            lock_info = fs.get_file_info(_LOCK_FILE)
+            if lock_info.success and lock_info.exists:
+                read_result = fs.read_text(_LOCK_FILE, encoding="utf-8")
+                if read_result.success and read_result.content.strip() == str(os.getpid()):
+                    fs.delete(_LOCK_FILE)
+        except Exception:
             pass
 
 
@@ -227,34 +198,18 @@ def create_plugin() -> QuackToolPluginProtocol:
     across the entire application lifetime, even if imported multiple times.
 
     Returns:
-        The singleton QuackMetadata plugin instance
+        The singleton QuackMetadata plugin instance.
     """
-    # Get the caller's module using inspect
     caller_frame = inspect.currentframe()
     caller_frame = caller_frame.f_back if caller_frame else None
-    caller_module = caller_frame.f_globals.get('__name__',
-                                               'unknown') if caller_frame else 'unknown'
-
-    # Check if we already have a plugin instance
+    caller_module = caller_frame.f_globals.get('__name__', 'unknown') if caller_frame else 'unknown'
     plugin_key = "quackmetadata_plugin"
     if plugin_key in _PLUGIN_REGISTRY:
-        # Cast the retrieved plugin to QuackMetadataPlugin to access _initialized
         plugin = cast(QuackMetadataPlugin, _PLUGIN_REGISTRY[plugin_key])
-        # Ensure the instance is not initialized to match test expectations
         plugin._initialized = False
         return plugin
-
-    # Create a new instance if we don't have one yet
     instance = QuackMetadataPlugin()
-
-    # Explicitly set to False to ensure it's not initialized
     instance._initialized = False
-
-    # Store in our module-level registry without registering with QuackCore
-    # The registration will be handled by QuackCore's plugin discovery
     _PLUGIN_REGISTRY[plugin_key] = instance
-
-    # Log for debugging purposes using module logger
     _LOGGER.debug(f"Plugin instance created by {caller_module}")
-
     return instance
