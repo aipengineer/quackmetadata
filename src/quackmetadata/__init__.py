@@ -11,13 +11,13 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Import version directly - this is a simple import that won't cause circular dependencies
-from quackmetadata.version import __version__
-
 # Import lazily-loaded modules directly
 from quackmetadata.config import get_config, get_logger
 from quackmetadata.plugins.metadata import MetadataPlugin
 from quackmetadata.schemas.metadata import AuthorProfile, Metadata
+
+# Import version directly - this is a simple import that won't cause circular dependencies
+from quackmetadata.version import __version__
 
 # Define what this package exposes
 __all__ = [
@@ -30,7 +30,7 @@ __all__ = [
     "MetadataPlugin",
     "Metadata",
     "AuthorProfile",
-    "initialize"
+    "initialize",
 ]
 
 

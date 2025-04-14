@@ -7,11 +7,14 @@ used for generating prompts for LLM interactions.
 """
 
 from collections.abc import Mapping
-import pystache
-from quackcore.logging import get_logger
+from pathlib import Path
 
-# Import FS service and helpers
+import pystache
+
+# Import FS service and Paths resolver
 from quackcore.fs import service as fs
+from quackcore.logging import get_logger
+from quackcore.paths import resolver
 
 logger = get_logger(__name__)
 
@@ -32,21 +35,28 @@ def render_prompt(template_path: str, context: Mapping[str, str]) -> str:
         ValueError: If the template is invalid or context is missing required values.
     """
     try:
-        file_info = fs.get_file_info(template_path)
-        if not (file_info.success and file_info.exists):
-            raise FileNotFoundError(f"Template file not found: {template_path}")
+        # Normalize and convert path to string.
+        template_path_str = str(fs.normalize_path(template_path))
 
-        read_result = fs.read_text(template_path, encoding="utf-8")
+        # Use FS to check if the file exists.
+        file_info = fs.get_file_info(template_path_str)
+        if not file_info.success or not file_info.exists:
+            raise FileNotFoundError(f"Template file not found: {template_path_str}")
+
+        # Read the file using FS.
+        read_result = fs.read_text(template_path_str, encoding="utf-8")
         if not read_result.success:
-            raise FileNotFoundError(f"Failed to read template file: {read_result.error}")
+            raise FileNotFoundError(
+                f"Failed to read template file: {read_result.error}"
+            )
 
         template = read_result.content
         rendered = pystache.render(template, context)
-        logger.debug(f"Successfully rendered template: {template_path}")
+        logger.debug(f"Successfully rendered template: {template_path_str}")
         return rendered
 
     except FileNotFoundError as e:
-        logger.error(f"Template file not found: {template_path}")
+        logger.error(f"Template file not found: {template_path_str}")
         raise e
     except KeyError as e:
         logger.error(f"Missing context key in template: {e}")
@@ -56,7 +66,7 @@ def render_prompt(template_path: str, context: Mapping[str, str]) -> str:
         raise ValueError(f"Failed to render template: {e}") from e
 
 
-def get_template_path(template_name: str, category: str = "metadata"):
+def get_template_path(template_name: str, category: str = "metadata") -> str:
     """
     Get the path to a template by name and category.
 
@@ -65,22 +75,54 @@ def get_template_path(template_name: str, category: str = "metadata"):
         category: Category folder name (default: "metadata").
 
     Returns:
-        A Path-like object pointing to the template file.
+        A string path to the template file.
     """
-    from importlib import resources
+    # Try to find templates in package resources.
     try:
-        with resources.files(f"quacktool.prompts.{category}") as path:
-            template_path = path / f"{template_name}.mustache"
-            # Use fs.get_file_info to check for existence.
-            if fs.get_file_info(str(template_path)).success and fs.get_file_info(str(template_path)).exists:
-                return template_path
+        from importlib import resources
+
+        try:
+            # First try with quacktool.prompts
+            with resources.files(f"quacktool.prompts.{category}") as pkg_path:
+                template_path = pkg_path / f"{template_name}.mustache"
+                template_path_str = str(template_path)
+                file_info = fs.get_file_info(template_path_str)
+                if file_info.success and file_info.exists:
+                    return template_path_str
+        except (ImportError, ModuleNotFoundError):
+            # Then try with quackmetadata.prompts
+            try:
+                with resources.files(f"quackmetadata.prompts.{category}") as pkg_path:
+                    template_path = pkg_path / f"{template_name}.mustache"
+                    template_path_str = str(template_path)
+                    file_info = fs.get_file_info(template_path_str)
+                    if file_info.success and file_info.exists:
+                        return template_path_str
+            except (ImportError, ModuleNotFoundError):
+                pass
     except (ImportError, ModuleNotFoundError):
         pass
 
-    # Fallback: construct the path using fs.join_path
-    # Here we still use Path to compute the base directory from __file__
-    from pathlib import Path
-    base_dir = Path(__file__).parent.parent
-    fallback = fs.join_path(str(base_dir), "prompts", category, f"{template_name}.mustache")
-    # Optionally cast fallback to Path, if needed:
-    return fallback
+    # Fallback: Attempt to resolve template path relative to project structure.
+    fallback_candidates = [
+        f"prompts/{category}/{template_name}.mustache",
+        f"./prompts/{category}/{template_name}.mustache",
+    ]
+    for candidate in fallback_candidates:
+        # Use the Paths resolver to resolve candidate paths relative to the project root.
+        candidate_path = resolver.resolve_project_path(candidate)
+        candidate_str = str(candidate_path)
+        file_info = fs.get_file_info(candidate_str)
+        if file_info.success and file_info.exists:
+            return candidate_str
+
+    # As a last resort, manually build a fallback path using the current module's directory.
+    current_file = Path(__file__)
+    current_dir = current_file.parent
+    default_path = str(
+        current_dir.parent / "prompts" / category / f"{template_name}.mustache"
+    )
+    logger.warning(
+        f"Could not find template: {template_name}. Using fallback path: {default_path}"
+    )
+    return default_path

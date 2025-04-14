@@ -9,6 +9,7 @@ that can be discovered by QuackCore's plugin system.
 from typing import cast
 
 from quackcore.logging import get_logger
+
 from quackmetadata.plugins.metadata import MetadataPlugin
 from quackmetadata.protocols import QuackToolPluginProtocol
 

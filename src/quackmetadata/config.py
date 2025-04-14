@@ -16,7 +16,8 @@ from quackcore.config import load_config
 from quackcore.config.models import QuackConfig
 
 # Import QuackCore FS service and helper function.
-from quackcore.fs import service as fs, join_path
+from quackcore.fs import join_path
+from quackcore.fs import service as fs
 
 # Keep track of open file handlers to ensure they get closed.
 _file_handlers: list[logging.FileHandler] = []
@@ -99,7 +100,9 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
         metadata_config = quack_config.custom.get("quackmetadata", {})
     else:
         if not hasattr(quack_config.custom, "quackmetadata"):
-            setattr(quack_config.custom, "quackmetadata", QuackMetadataConfig().model_dump())
+            setattr(
+                quack_config.custom, "quackmetadata", QuackMetadataConfig().model_dump()
+            )
         metadata_config = getattr(quack_config.custom, "quackmetadata", {})
 
     # Get the log level from metadata_config.
@@ -220,4 +223,5 @@ def get_logger() -> logging.Logger:
         Logger instance for QuackMetadata
     """
     from quackcore.logging import get_logger
+
     return get_logger("quackmetadata")

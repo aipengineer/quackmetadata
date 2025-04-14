@@ -26,15 +26,29 @@ def calculate_rarity(summary: str) -> str:
     summary_lower = summary.lower()
 
     # Legendary criteria
-    legendary_terms = ["groundbreaking", "revolutionary", "unprecedented",
-                       "extraordinary", "remarkable", "absurd", "paradoxical"]
+    legendary_terms = [
+        "groundbreaking",
+        "revolutionary",
+        "unprecedented",
+        "extraordinary",
+        "remarkable",
+        "absurd",
+        "paradoxical",
+    ]
 
     if len(summary) > 500 and any(term in summary_lower for term in legendary_terms):
         return "🟣 Legendary"
 
     # Rare criteria
-    rare_terms = ["innovative", "unique", "uncommon", "unusual",
-                  "specialized", "technical", "complex"]
+    rare_terms = [
+        "innovative",
+        "unique",
+        "uncommon",
+        "unusual",
+        "specialized",
+        "technical",
+        "complex",
+    ]
 
     if len(summary) > 300 or any(term in summary_lower for term in rare_terms):
         return "🔴 Rare"

@@ -7,10 +7,10 @@ compatible with QuackCore and QuackMetadata.
 """
 
 from logging import Logger
-from typing import Protocol, runtime_checkable, Any
+from typing import Any, Protocol, runtime_checkable
 
 from quackcore.integrations.core.results import IntegrationResult
-from quackcore.plugins.protocols import QuackPluginProtocol
+from quackcore.plugins.protocols import QuackPluginMetadata, QuackPluginProtocol
 
 
 @runtime_checkable
@@ -28,6 +28,15 @@ class QuackToolPluginProtocol(QuackPluginProtocol, Protocol):
     @property
     def version(self) -> str:
         """Get the version of the plugin."""
+        ...
+
+    def get_metadata(self) -> QuackPluginMetadata:
+        """
+        Get metadata for the plugin.
+
+        Returns:
+            QuackPluginMetadata: Plugin metadata
+        """
         ...
 
     def initialize(self) -> IntegrationResult:

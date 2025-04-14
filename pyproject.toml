@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "quackmetadata"
 version = "0.1.0"
-description = "A QuackVerse tool for automation"
+description = "A QuackVerse tool for automation of metadata generation"
 readme = "README.md"
 requires-python = ">=3.13"
 license = { text = "GNU GPL" }
 authors = [
-    { name = "Your Name", email = "your.email@example.com" }
+    { name = "Rod Rivera", email = "rod@aip.engineer" }
 ]
 keywords = [
     "automation",
@@ -50,14 +50,14 @@ dev = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/aipengineer/quacktool"
-"Bug Tracker" = "https://github.com/aipengineer/quacktool/issues"
+"Homepage" = "https://github.com/ducktyper-ai/quacktool"
+"Bug Tracker" = "https://github.com/ducktyper-ai/quacktool/issues"
 
 [project.scripts]
 quacktool = "quackmetadata.cli:main"
 
 [tool.hatch.version]
-path = "src/quacktool/__init__.py"
+path = "src/quackmetadata/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/quackmetadata"]

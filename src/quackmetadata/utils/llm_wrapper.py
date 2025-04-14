@@ -1,62 +1,100 @@
-# src/quackmetadata/utils/llm_wrapper.py
 """
 LLM wrapper utilities for QuackMetadata.
 
 This module provides wrappers for LLM clients to handle import errors
-and ensure graceful fallbacks.
+and ensure graceful fallbacks. It now also leverages QuackCore FS and
+QuackCore Paths for configuration and file resolution when needed.
 """
 
 import os
-from typing import Any
+from typing import Any, Tuple
 
-from quackcore.integrations.llms import (
-    MockLLMClient,
-)
-
+# Import QuackCore FS and Paths.
+from quackcore.fs import service as fs
+from quackcore.integrations.llms import MockLLMClient
 from quackcore.logging import get_logger
+from quackcore.paths import resolver
 
 logger = get_logger(__name__)
 
 
-def get_llm_integration(force_mock: bool = False) -> Any:
+def get_llm_integration(force_mock: bool = False) -> Tuple[Any, bool]:
     """
     Get an LLM integration with fallback to MockLLMClient.
 
-    This function tries to create a real LLM integration, but falls back
-    to a MockLLMClient if the real integration fails.
+    This function first checks environment variables for API keys.
+    If none are found, it attempts to load a configuration file (e.g. "config/quack_config.yaml")
+    using QuackCore Paths and FS to set the keys from configuration.
+    Finally, if keys are still missing or force_mock is True, it falls back to a MockLLMClient.
 
     Args:
         force_mock: Whether to force the use of MockLLMClient
 
     Returns:
-        Any: An LLM integration instance
+        A tuple containing:
+          - The LLM integration instance.
+          - A boolean indicating whether the mock was used.
     """
-    # If forcing mock, return it directly
+    # If forcing mock, return immediately.
     if force_mock:
         logger.info("Forcing use of MockLLMClient as requested")
         return create_mock_llm(), True
 
-    # First, check if we have any API keys in the environment
+    # Check if we have any API keys in the environment.
     has_openai_key = "OPENAI_API_KEY" in os.environ
     has_anthropic_key = "ANTHROPIC_API_KEY" in os.environ
 
-    if not has_openai_key and not has_anthropic_key:
-        logger.warning("No LLM API keys found in environment, using MockLLMClient")
+    if not (has_openai_key or has_anthropic_key):
+        logger.warning(
+            "No LLM API keys found in environment. Attempting to load from configuration."
+        )
+        # Use QuackCore Paths to resolve the configuration file relative to the project root.
+        config_file = resolver.resolve_project_path("config/quack_config.yaml")
+        config_info = fs.get_file_info(str(config_file))
+        if config_info.success and config_info.exists:
+            config_result = fs.read_yaml(str(config_file))
+            if config_result.success:
+                config_data = config_result.data
+                # Attempt to load API keys from configuration and set them in the environment.
+                openai_key = (
+                    config_data.get("integrations", {})
+                    .get("llm", {})
+                    .get("openai", {})
+                    .get("api_key")
+                )
+                anthropic_key = (
+                    config_data.get("integrations", {})
+                    .get("llm", {})
+                    .get("anthropic", {})
+                    .get("api_key")
+                )
+                if openai_key:
+                    os.environ["OPENAI_API_KEY"] = openai_key
+                    has_openai_key = True
+                if anthropic_key:
+                    os.environ["ANTHROPIC_API_KEY"] = anthropic_key
+                    has_anthropic_key = True
+            else:
+                logger.error(
+                    f"Could not read configuration from {config_file}: {config_result.error}"
+                )
+
+    if not (has_openai_key or has_anthropic_key):
+        logger.warning(
+            "No LLM API keys available after configuration lookup, using MockLLMClient"
+        )
         return create_mock_llm(), True
 
-    # Try to create a real LLM integration
+    # Try to create a real LLM integration.
     try:
-        # Import within the function to handle import errors
         try:
             from quackcore.integrations.llms import create_integration
         except ImportError as e:
             logger.error(f"Failed to import create_integration: {e}")
             return create_mock_llm(), True
 
-        # Try to create the integration
         llm_service = create_integration()
         init_result = llm_service.initialize()
-
         if not init_result.success:
             logger.error(f"Failed to initialize LLM service: {init_result.error}")
             return create_mock_llm(), True
@@ -73,7 +111,7 @@ def create_mock_llm() -> MockLLMClient:
     Create a MockLLMClient with reasonable responses for testing.
 
     Returns:
-        MockLLMClient: A mock LLM client
+        MockLLMClient: A mock LLM client.
     """
     mock_responses = [
         """```json
@@ -99,35 +137,35 @@ def create_mock_llm() -> MockLLMClient:
     return MockLLMClient(script=mock_responses)
 
 
-def check_llm_availability() -> tuple[bool, str]:
+def check_llm_availability() -> Tuple[bool, str]:
     """
     Check if real LLM services are available.
 
     Returns:
-        tuple[bool, str]: A tuple containing a boolean indicating
-                         if real LLMs are available and a message
+        A tuple containing:
+         - A boolean indicating if real LLMs are available.
+         - A status message.
     """
-    # Check for installed packages
     openai_available = False
     anthropic_available = False
 
     try:
         import openai
+
         openai_available = True
     except ImportError:
         pass
 
     try:
         import anthropic
+
         anthropic_available = True
     except ImportError:
         pass
 
-    # Check for API keys
     has_openai_key = "OPENAI_API_KEY" in os.environ
     has_anthropic_key = "ANTHROPIC_API_KEY" in os.environ
 
-    # Build status message
     available_providers = []
     missing_components = []
 
@@ -147,11 +185,13 @@ def check_llm_availability() -> tuple[bool, str]:
         elif not has_anthropic_key:
             missing_components.append("ANTHROPIC_API_KEY not set")
 
-    # Build result
     if available_providers:
         return True, f"Available LLM providers: {', '.join(available_providers)}"
     else:
-        return False, f"No LLM providers available. Issues: {', '.join(missing_components)}"
+        return (
+            False,
+            f"No LLM providers available. Issues: {', '.join(missing_components)}",
+        )
 
 
 def ensure_llm_packages() -> bool:
@@ -159,24 +199,27 @@ def ensure_llm_packages() -> bool:
     Ensure LLM packages are installed.
 
     Returns:
-        bool: True if at least one package is installed
+        True if at least one package is installed.
     """
-    # Try importing packages directly
     openai_available = False
     anthropic_available = False
 
     try:
         import openai
+
         openai_available = True
     except ImportError:
         logger.warning(
-            "OpenAI package not available - some functionality may be limited")
+            "OpenAI package not available - some functionality may be limited"
+        )
 
     try:
         import anthropic
+
         anthropic_available = True
     except ImportError:
         logger.warning(
-            "Anthropic package not available - some functionality may be limited")
+            "Anthropic package not available - some functionality may be limited"
+        )
 
     return openai_available or anthropic_available
