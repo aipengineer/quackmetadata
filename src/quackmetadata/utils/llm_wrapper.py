@@ -8,20 +8,20 @@ QuackCore Paths for configuration and file resolution when needed.
 """
 
 import os
-from typing import Any, Tuple
+from typing import Any
 
 # Import QuackCore FS and Paths.
 from quackcore.fs.service import get_service
-
-fs = get_service()
 from quackcore.integrations.llms import MockLLMClient
 from quackcore.logging import get_logger
 from quackcore.paths import service as paths
 
+fs = get_service()
+
 logger = get_logger(__name__)
 
 
-def get_llm_integration(force_mock: bool = False) -> Tuple[Any, bool]:
+def get_llm_integration(force_mock: bool = False) -> tuple[Any, bool]:
     """
     Get an LLM integration with fallback to MockLLMClient.
 
@@ -140,7 +140,7 @@ def create_mock_llm() -> MockLLMClient:
     return MockLLMClient(script=mock_responses)
 
 
-def check_llm_availability() -> Tuple[bool, str]:
+def check_llm_availability() -> tuple[bool, str]:
     """
     Check if real LLM services are available.
 

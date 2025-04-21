@@ -6,8 +6,6 @@ from logging import Logger
 from typing import Any, cast
 
 from quackcore.fs.service import get_service
-
-fs = get_service()
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.logging import get_logger
 from quackcore.plugins.protocols import QuackPluginMetadata
@@ -15,6 +13,8 @@ from quackcore.plugins.protocols import QuackPluginMetadata
 from quackmetadata.plugins.metadata import MetadataPlugin
 from quackmetadata.protocols import QuackToolPluginProtocol
 from quackmetadata.version import __version__
+
+fs = get_service()
 
 # Module-level dictionary to track registrations.
 _PLUGIN_REGISTRY: dict[str, QuackToolPluginProtocol] = {}

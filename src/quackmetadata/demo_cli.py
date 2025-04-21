@@ -19,15 +19,14 @@ from quackcore.cli import (
 
 # Dogfood FS and Paths to normalize and resolve file paths.
 from quackcore.fs.service import get_service
-
-fs = get_service()
 from quackcore.logging import get_logger
-from quackcore.paths import service as paths
 
 from quackmetadata.commands.metadata_cli import metadata_cli
 from quackmetadata.config import get_config
 from quackmetadata.plugins.metadata import MetadataPlugin
 from quackmetadata.version import __version__, display_version_info
+
+fs = get_service()
 
 # Get project name from config or use default.
 try:

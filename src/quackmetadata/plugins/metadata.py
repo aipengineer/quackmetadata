@@ -10,14 +10,12 @@ results back to Google Drive.
 import tempfile
 import time
 from logging import Logger
-from typing import Any, Dict, Protocol
+from typing import Any, Protocol
 
 from quackcore.errors import QuackIntegrationError
 
 # Use QuackCore FS for all file operations.
 from quackcore.fs.service import get_service
-
-fs = get_service()
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.integrations.google.drive import GoogleDriveService
 from quackcore.integrations.llms import (
@@ -37,6 +35,8 @@ from quackmetadata.protocols import QuackToolPluginProtocol
 from quackmetadata.schemas.metadata import Metadata
 from quackmetadata.utils.prompt_engine import get_template_path, render_prompt
 from quackmetadata.utils.rarity import calculate_rarity
+
+fs = get_service()
 
 
 # Define the SupportsWrite protocol.
@@ -268,7 +268,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
             return IntegrationResult.error_result(f"Failed to process file: {str(e)}")
 
     def _process_drive_file(
-        self, file_id: str, output_path: str | None, options: Dict[str, Any]
+        self, file_id: str, output_path: str | None, options: dict[str, Any]
     ) -> IntegrationResult:
         """
         Process a file from Google Drive.
@@ -333,7 +333,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
         return result
 
     def _process_local_file(
-        self, file_path: str, output_path: str | None, options: Dict[str, Any]
+        self, file_path: str, output_path: str | None, options: dict[str, Any]
     ) -> IntegrationResult:
         """
         Process a local file.
@@ -411,7 +411,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
             return IntegrationResult.error_result(f"Failed to process file: {str(e)}")
 
     def _extract_metadata(
-        self, content: str, options: Dict[str, Any]
+        self, content: str, options: dict[str, Any]
     ) -> IntegrationResult:
         """
         Extract metadata from content using an LLM.

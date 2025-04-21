@@ -13,11 +13,10 @@ import pystache
 
 # Import FS service and Paths service
 from quackcore.fs.service import get_service
-
-fs = get_service()
 from quackcore.logging import get_logger
 from quackcore.paths import service as paths
 
+fs = get_service()
 logger = get_logger(__name__)
 
 

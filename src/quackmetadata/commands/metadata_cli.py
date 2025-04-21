@@ -17,11 +17,11 @@ from quackcore.cli import (
     print_success,
 )
 from quackcore.fs.service import get_service
-
-fs = get_service()
 from quackcore.logging import get_logger
 
 from quackmetadata.plugins.metadata import MetadataPlugin
+
+fs = get_service()
 
 # Create a logger for this module
 logger = get_logger(__name__)

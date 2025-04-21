@@ -92,6 +92,7 @@ test: install-dev ## Run tests with coverage
 .PHONY: format
 format: ## Format code with ruff
 	@echo "${BLUE}Formatting code...${RESET}"
+	$(PYTHON) -m ruff check src/quackmetadata --fix
 	$(PYTHON) -m ruff format .
 	$(PYTHON) -m isort .
 

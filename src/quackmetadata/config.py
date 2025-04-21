@@ -101,9 +101,7 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
         metadata_config = quack_config.custom.get("quackmetadata", {})
     else:
         if not hasattr(quack_config.custom, "quackmetadata"):
-            setattr(
-                quack_config.custom, "quackmetadata", QuackMetadataConfig().model_dump()
-            )
+            quack_config.custom.quackmetadata = QuackMetadataConfig().model_dump()
         metadata_config = getattr(quack_config.custom, "quackmetadata", {})
 
     # Get the log level from metadata_config.
@@ -213,7 +211,7 @@ def update_tool_config(new_config: dict[str, Any]) -> None:
     if hasattr(config.custom, "get"):
         config.custom["quackmetadata"] = updated_config
     else:
-        setattr(config.custom, "quackmetadata", updated_config)
+        config.custom.quackmetadata = updated_config
 
 
 def get_logger() -> logging.Logger:
