@@ -16,7 +16,6 @@ from quackcore.config import load_config
 from quackcore.config.models import QuackConfig
 
 # Import QuackCore FS service and helper function.
-from quackcore.fs import join_path
 from quackcore.fs import service as fs
 
 # Keep track of open file handlers to ensure they get closed.
@@ -149,7 +148,7 @@ def initialize_config(config_path: str | None = None) -> QuackConfig:
     fs.create_directory(logs_dir, exist_ok=True)
 
     try:
-        log_file = join_path(logs_dir, "quackmetadata.log")
+        log_file = fs.join_path(logs_dir, "quackmetadata.log")
         file_handler = logging.FileHandler(str(log_file), mode="a")
         file_handler.setLevel(log_level)
         root_logger.addHandler(file_handler)

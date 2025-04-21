@@ -1,3 +1,4 @@
+# src/quackmetadata/plugins/metadata.py
 """
 QuackMetadata plugin for metadata extraction.
 
@@ -26,8 +27,8 @@ from quackcore.integrations.llms import (
 )
 from quackcore.logging import get_logger
 
-# Import QuackCore Paths resolver for project-aware path resolution.
-from quackcore.paths import resolver
+# Import QuackCore Paths for project-aware path resolution.
+from quackcore.paths import service as paths
 from quackcore.plugins.protocols import QuackPluginMetadata
 
 from quackmetadata.protocols import QuackToolPluginProtocol
@@ -76,7 +77,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
 
         # Instead of hard-coding "./output", resolve the output directory using QuackCore Paths.
         try:
-            project_context = resolver.detect_project_context()
+            project_context = paths.detect_project_context()
             # If a project context exists, use its defined output directory.
             output_dir = (
                 project_context.get_output_dir()

@@ -5,7 +5,6 @@ import tempfile
 from logging import Logger
 from typing import Any, cast
 
-from quackcore.fs import join_path
 from quackcore.fs import service as fs
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.logging import get_logger
@@ -21,9 +20,9 @@ _LOGGER = get_logger(__name__)
 
 # --- Determine Lock Directory Using QuackCore Paths if Available ---
 try:
-    from quackcore.paths import resolver
+    from quackcore.paths import service as paths
 
-    project_context = resolver.detect_project_context()
+    project_context = paths.detect_project_context()
     # Use the project temporary directory if available; otherwise, fallback to system temp.
     temp_dir = (
         project_context.get_temp_dir()
@@ -33,8 +32,8 @@ try:
 except Exception:
     temp_dir = tempfile.gettempdir()
 
-_LOCK_DIR = fs.normalize_path(join_path(temp_dir, "quackmetadata"))
-_LOCK_FILE = fs.normalize_path(join_path(_LOCK_DIR, "instance.lock"))
+_LOCK_DIR = fs.normalize_path(fs.join_path(temp_dir, "quackmetadata"))
+_LOCK_FILE = fs.normalize_path(fs.join_path(_LOCK_DIR, "instance.lock"))
 
 
 def _check_other_instances() -> tuple[bool, str]:

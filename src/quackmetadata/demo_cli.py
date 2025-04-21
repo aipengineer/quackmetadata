@@ -20,7 +20,7 @@ from quackcore.cli import (
 # Dogfood FS and Paths to normalize and resolve file paths.
 from quackcore.fs import service as fs
 from quackcore.logging import get_logger
-from quackcore.paths import resolver
+from quackcore.paths import service as paths
 
 from quackmetadata.commands.metadata_cli import metadata_cli
 from quackmetadata.config import get_config

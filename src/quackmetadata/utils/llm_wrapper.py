@@ -1,3 +1,4 @@
+# src/quackmetadata/utils/llm_wrapper.py
 """
 LLM wrapper utilities for QuackMetadata.
 
@@ -13,7 +14,7 @@ from typing import Any, Tuple
 from quackcore.fs import service as fs
 from quackcore.integrations.llms import MockLLMClient
 from quackcore.logging import get_logger
-from quackcore.paths import resolver
+from quackcore.paths import service as paths
 
 logger = get_logger(__name__)
 
@@ -49,7 +50,7 @@ def get_llm_integration(force_mock: bool = False) -> Tuple[Any, bool]:
             "No LLM API keys found in environment. Attempting to load from configuration."
         )
         # Use QuackCore Paths to resolve the configuration file relative to the project root.
-        config_file = resolver.resolve_project_path("config/quack_config.yaml")
+        config_file = paths.resolve_project_path("config/quack_config.yaml")
         config_info = fs.get_file_info(str(config_file))
         if config_info.success and config_info.exists:
             config_result = fs.read_yaml(str(config_file))

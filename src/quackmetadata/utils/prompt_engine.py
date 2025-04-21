@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pystache
 
-# Import FS service and Paths resolver
+# Import FS service and Paths service
 from quackcore.fs import service as fs
 from quackcore.logging import get_logger
-from quackcore.paths import resolver
+from quackcore.paths import sergice as paths
 
 logger = get_logger(__name__)
 
@@ -109,8 +109,8 @@ def get_template_path(template_name: str, category: str = "metadata") -> str:
         f"./prompts/{category}/{template_name}.mustache",
     ]
     for candidate in fallback_candidates:
-        # Use the Paths resolver to resolve candidate paths relative to the project root.
-        candidate_path = resolver.resolve_project_path(candidate)
+        # Use the Paths to resolve candidate paths relative to the project root.
+        candidate_path = paths.resolve_project_path(candidate)
         candidate_str = str(candidate_path)
         file_info = fs.get_file_info(candidate_str)
         if file_info.success and file_info.exists:

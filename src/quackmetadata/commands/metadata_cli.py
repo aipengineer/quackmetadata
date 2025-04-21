@@ -1,3 +1,4 @@
+# src/quackmetadata/commands/metadata_cli.py
 """
 Command-line interface for the QuackMetadata tool.
 

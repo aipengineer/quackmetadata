@@ -8,9 +8,9 @@ BLUE   := $(shell tput -Txterm setaf 4)
 # Project settings
 PYTHON_VERSION := 3.13
 VENV_NAME := .venv
-PYTHON := $(VENV_NAME)/bin/python
+PYTHON := $(CURDIR)/$(VENV_NAME)/bin/python
 PROJECT_NAME := quacktool
-QUACKCORE_PATH ?= ../quackverse
+QUACKCORE_PATH ?= ../quackverse/quackcore
 
 # Test settings
 TEST_PATH := tests/
@@ -38,9 +38,11 @@ help: ## Show this help message
 
 # Development environment targets
 .PHONY: env
-env: ## Create virtual environment using uv
+env: ## Create virtual environment using uv and install build tools
 	@echo "${BLUE}Creating virtual environment...${RESET}"
 	uv venv --python $(PYTHON_VERSION)
+	$(PYTHON) -m ensurepip --upgrade
+	$(PYTHON) -m pip install --upgrade pip setuptools wheel
 	@echo "${GREEN}Virtual environment created. Activate it with:${RESET}"
 	@echo "source $(VENV_NAME)/bin/activate"
 
