@@ -12,9 +12,11 @@ from pathlib import Path
 import pystache
 
 # Import FS service and Paths service
-from quackcore.fs import service as fs
+from quackcore.fs.service import get_service
+
+fs = get_service()
 from quackcore.logging import get_logger
-from quackcore.paths import sergice as paths
+from quackcore.paths import service as paths
 
 logger = get_logger(__name__)
 

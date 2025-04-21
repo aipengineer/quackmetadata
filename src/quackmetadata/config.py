@@ -16,7 +16,9 @@ from quackcore.config import load_config
 from quackcore.config.models import QuackConfig
 
 # Import QuackCore FS service and helper function.
-from quackcore.fs import service as fs
+from quackcore.fs.service import get_service
+
+fs = get_service()
 
 # Keep track of open file handlers to ensure they get closed.
 _file_handlers: list[logging.FileHandler] = []

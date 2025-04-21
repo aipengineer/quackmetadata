@@ -51,7 +51,7 @@ install-quackcore: ## Install quackcore dependency
 	@echo "${BLUE}Installing quackcore dependency...${RESET}"
 	@if [ -d "$(QUACKCORE_PATH)" ]; then \
 		echo "${GREEN}Found quackcore at $(QUACKCORE_PATH)${RESET}"; \
-		uv pip install -e "$(QUACKCORE_PATH)"; \
+		uv pip install -e "$(QUACKCORE_PATH)[all]"; \
 	else \
 		echo "${YELLOW}Warning: quackcore directory not found at $(QUACKCORE_PATH)${RESET}"; \
 		echo "${YELLOW}Set QUACKCORE_PATH to the correct directory or install manually${RESET}"; \

@@ -16,7 +16,9 @@ from quackcore.cli import (
     print_info,
     print_success,
 )
-from quackcore.fs import service as fs  # Use QuackCore FS for all file operations
+from quackcore.fs.service import get_service
+
+fs = get_service()
 from quackcore.logging import get_logger
 
 from quackmetadata.plugins.metadata import MetadataPlugin

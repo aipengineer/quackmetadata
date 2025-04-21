@@ -15,7 +15,9 @@ from typing import Any, Dict, Protocol
 from quackcore.errors import QuackIntegrationError
 
 # Use QuackCore FS for all file operations.
-from quackcore.fs import service as fs
+from quackcore.fs.service import get_service
+
+fs = get_service()
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.integrations.google.drive import GoogleDriveService
 from quackcore.integrations.llms import (

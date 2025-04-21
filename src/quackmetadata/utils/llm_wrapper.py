@@ -11,7 +11,9 @@ import os
 from typing import Any, Tuple
 
 # Import QuackCore FS and Paths.
-from quackcore.fs import service as fs
+from quackcore.fs.service import get_service
+
+fs = get_service()
 from quackcore.integrations.llms import MockLLMClient
 from quackcore.logging import get_logger
 from quackcore.paths import service as paths

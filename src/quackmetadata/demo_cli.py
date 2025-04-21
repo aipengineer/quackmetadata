@@ -18,7 +18,9 @@ from quackcore.cli import (
 )
 
 # Dogfood FS and Paths to normalize and resolve file paths.
-from quackcore.fs import service as fs
+from quackcore.fs.service import get_service
+
+fs = get_service()
 from quackcore.logging import get_logger
 from quackcore.paths import service as paths
 

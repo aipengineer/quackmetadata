@@ -5,7 +5,9 @@ import tempfile
 from logging import Logger
 from typing import Any, cast
 
-from quackcore.fs import service as fs
+from quackcore.fs.service import get_service
+
+fs = get_service()
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.logging import get_logger
 from quackcore.plugins.protocols import QuackPluginMetadata
