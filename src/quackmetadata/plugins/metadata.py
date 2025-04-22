@@ -219,12 +219,8 @@ class MetadataPlugin(QuackToolPluginProtocol):
         """
         return self._initialized
 
-    def process_file(
-        self,
-        file_path: str,
-        output_path: str | None = None,
-        options: dict[str, Any] | None = None,
-    ) -> IntegrationResult:
+    def process_file(self, file_path: str, output_path: str | None = None,
+                     options: dict[str, Any] | None = None) -> IntegrationResult:
         """
         Process a file using the metadata plugin.
 
@@ -250,19 +246,39 @@ class MetadataPlugin(QuackToolPluginProtocol):
             )
 
         try:
-            # Ensure file_path is a string.
-            file_path_str = str(file_path)
-            file_info = fs.get_file_info(file_path_str)
+            # Import extract_path_from_result
+            from quackcore.fs.service import standalone
 
-            # If file_info fails or file doesn't exist and file_path contains no path separator, consider it a Google Drive ID.
+            # Get the extracted path result
+            extract_result = standalone.extract_path_from_result(file_path)
+            if not extract_result.success:
+                return IntegrationResult.error_result(
+                    f"Failed to process path: {extract_result.error}")
+
+            # Get the actual string path from the result
+            clean_file_path = extract_result.data
+
+            # Get file info using the clean path
+            file_info = fs.get_file_info(clean_file_path)
+
+            # Determine if it's a Drive ID or local path
             is_drive_id = (not file_info.success or not file_info.exists) and (
-                "/" not in file_path_str and "\\" not in file_path_str
+                    "/" not in str(clean_file_path) and "\\" not in str(clean_file_path)
             )
 
+            # Clean output path if provided
+            clean_output_path = None
+            if output_path:
+                output_extract_result = standalone.extract_path_from_result(output_path)
+                if output_extract_result.success:
+                    clean_output_path = output_extract_result.data
+
             if is_drive_id:
-                return self._process_drive_file(file_path_str, output_path, options)
+                return self._process_drive_file(clean_file_path, clean_output_path,
+                                                options)
             else:
-                return self._process_local_file(file_path_str, output_path, options)
+                return self._process_local_file(clean_file_path, clean_output_path,
+                                                options)
         except Exception as e:
             self.logger.exception(f"Failed to process file: {e}")
             return IntegrationResult.error_result(f"Failed to process file: {str(e)}")
