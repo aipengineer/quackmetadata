@@ -161,13 +161,34 @@ def extract_command(
     """
     logger_ = ctx.obj.get("logger") if ctx.obj else get_logger(__name__)
     logger_.info(f"Extracting metadata from: {input_file}")
-
     print_info("🕵️ Extracting metadata...")
 
-    # Normalize input, output and prompt_template using QuackCore FS.
-    norm_input = fs.normalize_path(input_file)
-    norm_output = fs.normalize_path(output) if output else None
-    norm_prompt = fs.normalize_path(prompt_template) if prompt_template else None
+    # Log the input and type
+    logger_.debug(f"Input file type: {type(input_file)}, value: {input_file}")
+
+    # Normalize input path
+    norm_input_result = fs.normalize_path(input_file)
+    logger_.debug(
+        f"Normalized input result type: {type(norm_input_result)}, value: {norm_input_result}")
+
+    # Extract the path string correctly
+    norm_input_str = str(
+        norm_input_result.path) if norm_input_result.success else input_file
+    logger_.debug(
+        f"Extracted path string type: {type(norm_input_str)}, value: {norm_input_str}")
+
+    # Similarly for output and prompt template
+    norm_output_str = None
+    if output:
+        norm_output_result = fs.normalize_path(output)
+        norm_output_str = str(
+            norm_output_result.path) if norm_output_result.success else output
+
+    norm_prompt_str = None
+    if prompt_template:
+        norm_prompt_result = fs.normalize_path(prompt_template)
+        norm_prompt_str = str(
+            norm_prompt_result.path) if norm_prompt_result.success else prompt_template
 
     # Create and initialize the metadata plugin.
     plugin = MetadataPlugin()
@@ -178,24 +199,28 @@ def extract_command(
             exit_code=1,
         )
 
-    # Process options.
-    options: dict[str, object] = {
+    # Process options
+    options = {
         "retries": retries,
         "dry_run": dry_run,
         "verbose": verbose,
     }
-    if norm_prompt:
-        options["prompt_template"] = str(norm_prompt)
+    if norm_prompt_str:
+        options["prompt_template"] = norm_prompt_str
 
-    # Process the file using the normalized paths.
-    result = plugin.process_file(
-        file_path=str(norm_input),
-        output_path=str(norm_output) if norm_output else None,
-        options=options,
-    )
+        # Process the file using clean strings
+        logger_.debug(f"Calling process_file with: {norm_input_str}")
+        result = plugin.process_file(
+            file_path=norm_input_str,
+            output_path=norm_output_str,
+            options=options,
+        )
 
-    if not result.success:
-        print_error(f"Failed to extract metadata: {result.error}", exit_code=1)
+        # If result failed, log the error
+        if not result.success:
+            logger_.error(f"Result error: {result.error}")
+            logger_.error(f"Result error type: {type(result.error)}")
+            print_error(f"Failed to extract metadata: {result.error}", exit_code=1)
 
     # Display results.
     content = result.content

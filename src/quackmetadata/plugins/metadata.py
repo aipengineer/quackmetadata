@@ -246,39 +246,123 @@ class MetadataPlugin(QuackToolPluginProtocol):
             )
 
         try:
-            # Import extract_path_from_result
-            from quackcore.fs.service import standalone
+            # Add detailed logging
+            self.logger.debug(
+                f"process_file received file_path type: {type(file_path)}, value: {file_path}")
 
-            # Get the extracted path result
-            extract_result = standalone.extract_path_from_result(file_path)
-            if not extract_result.success:
-                return IntegrationResult.error_result(
-                    f"Failed to process path: {extract_result.error}")
+            # Import exactly what we need
+            from quackcore.fs import PathResult
 
-            # Get the actual string path from the result
-            clean_file_path = extract_result.data
+            # First, ensure we have a string representation to work with
+            file_path_str = ""
 
-            # Get file info using the clean path
-            file_info = fs.get_file_info(clean_file_path)
+            # For Drive ID detection, we need a raw string before any normalization
+            raw_str = str(file_path)
 
-            # Determine if it's a Drive ID or local path
+            # Check for Drive ID pattern in raw input
+            is_likely_drive_id = (len(raw_str) >= 25 and len(raw_str) <= 45 and
+                                  "/" not in raw_str and "\\" not in raw_str and
+                                  "." not in raw_str)
+
+            # Extract clean path string
+            if isinstance(file_path, PathResult):
+                # For PathResult objects
+                file_path_str = str(file_path.path)
+                self.logger.debug("Extracted path from PathResult")
+            elif isinstance(file_path, str):
+                if file_path.startswith("success="):
+                    # For string representations of PathResult
+                    self.logger.warning(
+                        "Detected string representation of PathResult, fixing...")
+                    import re
+                    path_match = re.search(r"path=PosixPath\('([^']+)'\)", file_path)
+                    if path_match:
+                        file_path_str = path_match.group(1)
+                        self.logger.debug(f"Extracted path: {file_path_str}")
+                    else:
+                        file_path_str = file_path
+                else:
+                    # For regular strings
+                    file_path_str = file_path
+            else:
+                # For any other type, try to get a string representation
+                try:
+                    # Try to access path attribute
+                    if hasattr(file_path, "path"):
+                        path_attr = file_path.path
+                        if path_attr is not None:
+                            file_path_str = str(path_attr)
+                            self.logger.debug(
+                                "Extracted path from object with path attribute")
+                    # Try to access data attribute
+                    elif hasattr(file_path, "data"):
+                        data_attr = file_path.data
+                        if data_attr is not None:
+                            file_path_str = str(data_attr)
+                            self.logger.debug(
+                                "Extracted path from object with data attribute")
+                    else:
+                        # Fallback to string conversion
+                        file_path_str = str(file_path)
+                except Exception as e:
+                    self.logger.warning(f"Error extracting path, using str(): {e}")
+                    file_path_str = str(file_path)
+
+            self.logger.debug(f"Using file_path_str: {file_path_str}")
+
+            # Process output path similarly
+            output_path_str = None
+            if output_path is not None:
+                try:
+                    if isinstance(output_path, PathResult):
+                        output_path_str = str(output_path.path)
+                    elif isinstance(output_path, str):
+                        output_path_str = output_path
+                    elif hasattr(output_path, "path"):
+                        path_attr = output_path.path
+                        if path_attr is not None:
+                            output_path_str = str(path_attr)
+                    elif hasattr(output_path, "data"):
+                        data_attr = output_path.data
+                        if data_attr is not None:
+                            output_path_str = str(data_attr)
+                    else:
+                        output_path_str = str(output_path)
+                except Exception as e:
+                    self.logger.warning(
+                        f"Error extracting output path, using str(): {e}")
+                    output_path_str = str(output_path)
+
+            # Special case for Drive IDs - detect early and process directly
+            if is_likely_drive_id:
+                self.logger.info(
+                    f"Detected Google Drive file ID from raw input: {raw_str}")
+                return self._process_drive_file(raw_str, output_path_str, options)
+
+            # Secondary check for Drive ID after path extraction
+            if (len(file_path_str) >= 25 and len(file_path_str) <= 45 and
+                    "/" not in file_path_str and "\\" not in file_path_str and
+                    "." not in file_path_str):
+                self.logger.info(
+                    f"Detected Google Drive file ID after path processing: {file_path_str}")
+                return self._process_drive_file(file_path_str, output_path_str, options)
+
+            # Get file info to check if it exists locally
+            file_info = fs.get_file_info(file_path_str)
+
+            # Final fallback check for Drive ID
             is_drive_id = (not file_info.success or not file_info.exists) and (
-                    "/" not in str(clean_file_path) and "\\" not in str(clean_file_path)
+                    "/" not in file_path_str and "\\" not in file_path_str
             )
 
-            # Clean output path if provided
-            clean_output_path = None
-            if output_path:
-                output_extract_result = standalone.extract_path_from_result(output_path)
-                if output_extract_result.success:
-                    clean_output_path = output_extract_result.data
-
             if is_drive_id:
-                return self._process_drive_file(clean_file_path, clean_output_path,
-                                                options)
+                self.logger.info(
+                    f"File not found locally, treating as Google Drive ID: {file_path_str}")
+                return self._process_drive_file(file_path_str, output_path_str, options)
             else:
-                return self._process_local_file(clean_file_path, clean_output_path,
-                                                options)
+                self.logger.info(f"Processing as local file: {file_path_str}")
+                return self._process_local_file(file_path_str, output_path_str, options)
+
         except Exception as e:
             self.logger.exception(f"Failed to process file: {e}")
             return IntegrationResult.error_result(f"Failed to process file: {str(e)}")
@@ -299,7 +383,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
         """
         self.logger.info(f"Downloading file from Google Drive with ID: {file_id}")
 
-        # Download the file to the temporary directory (convert to string if necessary)
+        # Download the file to the temporary directory
         temp_dir_str = str(self._temp_dir)
         download_result = self._drive_service.download_file(
             remote_id=file_id, local_path=temp_dir_str
@@ -309,7 +393,11 @@ class MetadataPlugin(QuackToolPluginProtocol):
                 f"Failed to download file from Google Drive: {download_result.error}"
             )
 
-        local_path = str(fs.normalize_path(download_result.content))
+        # Ensure we have a clean local path
+        path_result = fs.normalize_path(download_result.content)
+        local_path = str(path_result.path) if path_result.success else str(
+            download_result.content)
+
         self.logger.info(f"Downloaded file to: {local_path}")
 
         file_info_result = self._drive_service.get_file_info(remote_id=file_id)
@@ -349,20 +437,16 @@ class MetadataPlugin(QuackToolPluginProtocol):
         return result
 
     def _process_local_file(
-        self, file_path: str, output_path: str | None, options: dict[str, Any]
+            self, file_path: str, output_path: str | None, options: dict[str, Any]
     ) -> IntegrationResult:
         """
         Process a local file.
-
-        Args:
-            file_path: Path to the local file.
-            output_path: Optional path for the output metadata file.
-            options: Processing options.
-
-        Returns:
-            IntegrationResult containing the metadata extraction result.
         """
-        file_path_str = str(fs.normalize_path(file_path))
+        import os
+        # Ensure we're using a clean string path
+        file_path_str = str(file_path)
+
+        # Get file info using the string path
         file_info = fs.get_file_info(file_path_str)
         if not file_info.success or not file_info.exists:
             return IntegrationResult.error_result(f"File not found: {file_path_str}")
@@ -383,16 +467,15 @@ class MetadataPlugin(QuackToolPluginProtocol):
                 return metadata_result
             metadata = metadata_result.content
 
-            # Determine or generate the output metadata file path.
+            # When determining output path:
             if output_path:
-                metadata_path = str(fs.normalize_path(output_path))
+                metadata_path = str(output_path)
             else:
-                parts = fs.split_path(file_path_str)
-                file_name = parts[-1]
-                stem = file_name.rsplit(".", 1)[0]
-                metadata_path = fs.join_path(
-                    str(self._output_dir), f"{stem}.metadata.json"
-                )
+                # Use os.path directly for simplicity and reliability
+                basename = os.path.basename(file_path_str)
+                stem = os.path.splitext(basename)[0]
+                metadata_path = os.path.join(str(self._output_dir),
+                                             f"{stem}.metadata.json")
 
             self.logger.info(f"Writing metadata to: {metadata_path}")
             metadata_dict = metadata.model_dump()
@@ -405,10 +488,11 @@ class MetadataPlugin(QuackToolPluginProtocol):
                 )
 
             card = self._create_metadata_card(metadata)
-            filename_parts = fs.split_path(file_path_str)
-            file_name = filename_parts[-1] if filename_parts else file_path_str
 
-            message = f"Successfully extracted metadata from {file_name}"
+            # Use os.path to extract the filename for display
+            filename = os.path.basename(file_path_str)
+
+            message = f"Successfully extracted metadata from {filename}"
             if self._using_mock:
                 message += " (using mock data - not actual language model analysis)"
 
@@ -444,14 +528,11 @@ class MetadataPlugin(QuackToolPluginProtocol):
         verbose = options.get("verbose", False)
 
         if prompt_template:
-            template_path = str(fs.normalize_path(prompt_template))
+            # Ensure we have a clean path string for user-provided template
+            template_path = self._ensure_clean_path(prompt_template)
         else:
+            # get_template_path already returns a string, no need for additional processing
             template_path = get_template_path("generic", "metadata")
-            template_path = (
-                str(template_path)
-                if hasattr(template_path, "as_posix")
-                else template_path
-            )
 
         try:
             prompt = render_prompt(
@@ -491,21 +572,23 @@ class MetadataPlugin(QuackToolPluginProtocol):
 
                 try:
                     json_str = self._extract_json(response)
-                    parse_result = fs.read_json(json_str)
-                    if not parse_result.success:
-                        raise ValueError(f"Failed to parse JSON: {parse_result.error}")
-                    metadata_dict = parse_result.data
-                    metadata = Metadata.model_validate(metadata_dict)
-                    calculated_rarity = calculate_rarity(metadata.summary)
-                    if calculated_rarity != metadata.rarity:
-                        self.logger.info(
-                            f"Overriding LLM rarity '{metadata.rarity}' with calculated rarity '{calculated_rarity}'"
-                        )
-                        metadata.rarity = calculated_rarity
+                    import json
+                    try:
+                        metadata_dict = json.loads(json_str)
+                        metadata = Metadata.model_validate(metadata_dict)
+                        calculated_rarity = calculate_rarity(metadata.summary)
+                        if calculated_rarity != metadata.rarity:
+                            self.logger.info(
+                                f"Overriding LLM rarity '{metadata.rarity}' with calculated rarity '{calculated_rarity}'"
+                            )
+                            metadata.rarity = calculated_rarity
 
-                    return IntegrationResult.success_result(
-                        content=metadata, message="Successfully extracted metadata"
-                    )
+                        return IntegrationResult.success_result(
+                            content=metadata, message="Successfully extracted metadata"
+                        )
+                    except json.JSONDecodeError as json_err:
+                        raise ValueError(f"Invalid JSON format: {json_err}")
+
                 except Exception as e:
                     self.logger.error(f"Error parsing or validating metadata: {e}")
                     if verbose:
@@ -586,3 +669,23 @@ class MetadataPlugin(QuackToolPluginProtocol):
 
         card.append("╚══════════════════════════════════════════╝")
         return "\n".join(card)
+
+    def _ensure_clean_path(self, path_or_result) -> str:
+        """
+        Extract clean path string from various input types.
+
+        Args:
+            path_or_result: Can be a string, Path, PathResult, or any other Result object
+
+        Returns:
+            A clean path string
+        """
+        if hasattr(path_or_result, "path") and path_or_result.path is not None:
+            # Handle PathResult and similar objects
+            return str(path_or_result.path)
+        elif hasattr(path_or_result, "data") and path_or_result.data is not None:
+            # Handle DataResult objects
+            return str(path_or_result.data)
+        else:
+            # For strings and Path objects
+            return str(path_or_result)

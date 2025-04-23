@@ -1,3 +1,4 @@
+# src/quackmetadata/plugin.py
 import os
 import tempfile
 from logging import Logger

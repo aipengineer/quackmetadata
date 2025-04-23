@@ -36,8 +36,22 @@ def render_prompt(template_path: str, context: Mapping[str, str]) -> str:
         ValueError: If the template is invalid or context is missing required values.
     """
     try:
-        # Normalize and convert path to string.
-        template_path_str = str(fs.normalize_path(template_path))
+        # Check if template_path is a string representation of a PathResult
+        if isinstance(template_path, str) and template_path.startswith("success="):
+            logger.warning(
+                "Detected template_path as string representation of PathResult")
+            # Extract the actual path using regex
+            import re
+            path_match = re.search(r"path=PosixPath\('([^']+)'\)", template_path)
+            if path_match:
+                template_path_str = path_match.group(1)
+                logger.debug(f"Extracted path: {template_path_str}")
+            else:
+                # Use as is if we can't extract the path
+                template_path_str = template_path
+        else:
+            # Normalize and convert path to string.
+            template_path_str = str(template_path)
 
         # Use FS to check if the file exists.
         file_info = fs.get_file_info(template_path_str)
@@ -58,7 +72,42 @@ def render_prompt(template_path: str, context: Mapping[str, str]) -> str:
 
     except FileNotFoundError as e:
         logger.error(f"Template file not found: {template_path_str}")
-        raise e
+
+        # Provide a default template when the file is not found
+        default_template = """
+        # Metadata Extraction Task
+
+        You are a metadata extraction assistant. Please analyze the content below and extract metadata in a structured format.
+
+        ## Content to Analyze:
+
+        {{content}}
+
+        ## Extraction Instructions:
+
+        Please extract the following metadata in JSON format:
+
+        ```json
+        {
+          "title": "A descriptive title for the content",
+          "domain": "The subject domain or category",
+          "tone": "The writing tone (formal, informal, academic, etc.)",
+          "summary": "A brief summary of the content (2-3 sentences)",
+          "keywords": ["keyword1", "keyword2", "keyword3", "etc"],
+          "rarity": "common|uncommon|rare|legendary"
+        }
+        ```
+
+        Please ensure the JSON is well-formed with no syntax errors.
+        """
+
+        logger.info("Using default template as fallback")
+        try:
+            return pystache.render(default_template, context)
+        except Exception as render_error:
+            raise ValueError(
+                f"Failed to render fallback template: {render_error}") from e
+
     except KeyError as e:
         logger.error(f"Missing context key in template: {e}")
         raise ValueError(f"Missing required context key: {e}") from e
@@ -86,22 +135,24 @@ def get_template_path(template_name: str, category: str = "metadata") -> str:
             # First try with quacktool.prompts
             with resources.files(f"quacktool.prompts.{category}") as pkg_path:
                 template_path = pkg_path / f"{template_name}.mustache"
+                # Convert PosixPath to string before using it
                 template_path_str = str(template_path)
                 file_info = fs.get_file_info(template_path_str)
                 if file_info.success and file_info.exists:
                     return template_path_str
-        except (ImportError, ModuleNotFoundError):
+        except (ImportError, ModuleNotFoundError, TypeError):
             # Then try with quackmetadata.prompts
             try:
                 with resources.files(f"quackmetadata.prompts.{category}") as pkg_path:
                     template_path = pkg_path / f"{template_name}.mustache"
+                    # Convert PosixPath to string before using it
                     template_path_str = str(template_path)
                     file_info = fs.get_file_info(template_path_str)
                     if file_info.success and file_info.exists:
                         return template_path_str
-            except (ImportError, ModuleNotFoundError):
+            except (ImportError, ModuleNotFoundError, TypeError):
                 pass
-    except (ImportError, ModuleNotFoundError):
+    except (ImportError, ModuleNotFoundError, TypeError):
         pass
 
     # Fallback: Attempt to resolve template path relative to project structure.
@@ -112,7 +163,10 @@ def get_template_path(template_name: str, category: str = "metadata") -> str:
     for candidate in fallback_candidates:
         # Use the Paths to resolve candidate paths relative to the project root.
         candidate_path = paths.resolve_project_path(candidate)
-        candidate_str = str(candidate_path)
+        # Convert the result to string
+        candidate_str = str(candidate_path.path) if hasattr(candidate_path,
+                                                            "path") else str(
+            candidate_path)
         file_info = fs.get_file_info(candidate_str)
         if file_info.success and file_info.exists:
             return candidate_str
@@ -126,4 +180,14 @@ def get_template_path(template_name: str, category: str = "metadata") -> str:
     logger.warning(
         f"Could not find template: {template_name}. Using fallback path: {default_path}"
     )
+
+    # Normalize the default_path to ensure it's clean
+    # This is important because this path will be passed to render_prompt
+    try:
+        path_result = fs.normalize_path(default_path)
+        if path_result.success:
+            default_path = str(path_result.path)
+    except Exception as e:
+        logger.warning(f"Could not normalize default path: {e}")
+
     return default_path
