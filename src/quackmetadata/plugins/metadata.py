@@ -491,7 +491,7 @@ class MetadataPlugin(QuackToolPluginProtocol):
 
                 try:
                     json_str = self._extract_json(response)
-                    parse_result = fs.parse_json(json_str)
+                    parse_result = fs.read_json(json_str)
                     if not parse_result.success:
                         raise ValueError(f"Failed to parse JSON: {parse_result.error}")
                     metadata_dict = parse_result.data

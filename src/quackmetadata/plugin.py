@@ -1,6 +1,5 @@
 import os
 import tempfile
-import inspect
 from logging import Logger
 from typing import Any, cast
 
