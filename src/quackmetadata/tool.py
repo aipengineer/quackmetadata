@@ -8,35 +8,51 @@ focusing only on the core business logic, with minimal dependencies on QuackCore
 """
 
 import json
+import os
 import time
-from typing import Any
+from typing import Any, cast
 
 # Import QuackCore essentials
+from quackcore.fs.service import get_service
 from quackcore.integrations.core.results import IntegrationResult
 from quackcore.integrations.llms import (
     ChatMessage,
     LLMOptions,
     RoleType,
-    create_integration,
 )
 from quackcore.logging import get_logger
+from quackcore.paths import service as paths
 
 # Import only the essential schemas
 from quackmetadata.schemas import Metadata
+from quackmetadata.utils.rarity import calculate_rarity
 
+# Get filesystem service and logger
+fs = get_service()
 logger = get_logger(__name__)
 
 
 def extract_metadata(content: str, options: dict[str, Any] = None) -> IntegrationResult:
     """
-    Extract metadata from document content using an LLM.
+    Extract structured metadata from document content using a Language Model.
+
+    This function processes the given text content through an LLM to extract
+    structured metadata including title, author information, domain, tone,
+    and other document characteristics.
 
     Args:
         content: Text content to extract metadata from
-        options: Processing options (retries, prompt_template, verbose)
+        options: Processing options including:
+            - retries: Number of retry attempts (default: 3)
+            - prompt_template: Custom template path
+            - verbose: Whether to print detailed logs
 
     Returns:
-        IntegrationResult containing extracted metadata or error
+        IntegrationResult containing:
+            - success: True if extraction succeeded
+            - content: Metadata object if successful
+            - error: Error message if failed
+            - message: Success or error message
     """
     options = options or {}
     max_retries = options.get("retries", 3)
@@ -61,12 +77,18 @@ def extract_metadata(content: str, options: dict[str, Any] = None) -> Integratio
             logger.info(f"Generated prompt:\n{prompt}")
 
         # Initialize LLM service
+        from quackcore.integrations.llms import create_integration
+        from quackcore.integrations.llms.service import LLMIntegration
+
         llm_service = create_integration()
         llm_init_result = llm_service.initialize()
         if not llm_init_result.success:
             return IntegrationResult.error_result(
                 f"Failed to initialize LLM: {llm_init_result.error}"
             )
+
+        # Type hint to help the linter
+        llm_service = cast(LLMIntegration, llm_service)
 
         # Prepare messages for LLM
         messages = [ChatMessage(role=RoleType.USER, content=prompt)]
@@ -103,7 +125,6 @@ def extract_metadata(content: str, options: dict[str, Any] = None) -> Integratio
                     metadata = Metadata.model_validate(metadata_dict)
 
                     # Calculate rarity score based on content
-                    from quackmetadata.utils.rarity import calculate_rarity
                     calculated_rarity = calculate_rarity(metadata.summary)
                     if calculated_rarity != metadata.rarity:
                         logger.info(
@@ -205,20 +226,21 @@ def process_file(file_path: str, output_path: str | None = None,
     """
     Process a file to extract metadata.
 
-    This is the main entry point function that handles both local files and Google Drive files.
-    It delegates to specialized functions for each case.
+    This function handles both local files and Google Drive files,
+    delegating to specialized functions for each case.
 
     Args:
         file_path: Path to the file or Google Drive ID
         output_path: Path to save the output metadata
-        options: Processing options
+        options: Processing options including:
+            - retries: Number of retry attempts (default: 3)
+            - prompt_template: Custom template path
+            - verbose: Whether to print detailed logs
+            - dry_run: Don't upload metadata to Google Drive
 
     Returns:
         IntegrationResult containing the extraction result
     """
-    from quackcore.fs.service import get_service
-    fs = get_service()
-
     logger.info(f"Processing file: {file_path}")
     options = options or {}
 
@@ -226,7 +248,7 @@ def process_file(file_path: str, output_path: str | None = None,
     if _is_likely_drive_id(file_path):
         # Process as Google Drive file
         logger.info(f"Processing as Google Drive file ID: {file_path}")
-        from quackmetadata.integrations.drive_handler import process_drive_file
+        from quackmetadata.utils.drive_handler import process_drive_file
         return process_drive_file(file_path, output_path, options)
 
     # Process as local file
@@ -254,12 +276,10 @@ def process_file(file_path: str, output_path: str | None = None,
         metadata = metadata_result.content
 
         # Determine output path
-        import os
         if output_path:
             metadata_path = output_path
         else:
             # Create a default output path
-            from quackcore.paths import service as paths
             output_dir = paths.get_output_dir() or "./output"
             fs.create_directory(output_dir, exist_ok=True)
 
@@ -318,7 +338,8 @@ def run(file_path: str, output_path: str | None = None,
     """
     Main entry point for the QuackMetadata tool.
 
-    This function is called by ducktyper or other consumers.
+    This function is called by CLI or other consumers. It processes the file
+    and returns results in a standardized dictionary format.
 
     Args:
         file_path: Path to the file to process
@@ -326,7 +347,13 @@ def run(file_path: str, output_path: str | None = None,
         options: Optional processing options
 
     Returns:
-        Dictionary containing the processing results
+        Dictionary containing the processing results including:
+            - success: Boolean indicating success or failure
+            - metadata: Extracted metadata if successful
+            - metadata_path: Path to the saved metadata file
+            - card: Formatted metadata card for display
+            - message: Success or error message
+            - error: Error message if failed
     """
     # Initialize logging
     logger.info("Starting QuackMetadata tool")
@@ -341,6 +368,8 @@ def run(file_path: str, output_path: str | None = None,
             "metadata": result.content.get("metadata", {}),
             "metadata_path": result.content.get("metadata_path", ""),
             "card": result.content.get("card", ""),
+            "drive_file_id": result.content.get("drive_file_id", None),
+            "original_file_name": result.content.get("original_file_name", None),
             "message": result.message
         }
     else:

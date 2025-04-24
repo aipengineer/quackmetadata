@@ -1,4 +1,4 @@
-# src/quackmetadata/integrations/drive_handler.py
+# src/quackmetadata/utils/drive_handler.py
 """
 Google Drive integration handler for QuackMetadata.
 
@@ -24,6 +24,11 @@ def process_drive_file(
 ) -> IntegrationResult:
     """
     Process a file from Google Drive.
+
+    This function:
+    1. Downloads the file from Google Drive
+    2. Extracts metadata using the core process_file function
+    3. Optionally uploads the metadata file back to Google Drive
 
     Args:
         file_id: Google Drive file ID
@@ -72,7 +77,7 @@ def process_drive_file(
         file_info = file_info_result.content
         file_name = file_info.get("name", "unknown")
 
-        # Process the downloaded file
+        # Process the downloaded file using the core process_file function
         from quackmetadata.tool import process_file
         result = process_file(local_path, output_path, options)
 
@@ -108,6 +113,7 @@ def process_drive_file(
     finally:
         # Clean up the temporary directory
         try:
+            #TODO: Implement delete_directory in fs
             fs.delete_directory(temp_dir, recursive=True)
         except Exception as e:
             logger.warning(f"Failed to clean up temporary directory: {e}")

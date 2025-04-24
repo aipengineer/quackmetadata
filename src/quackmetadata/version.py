@@ -11,7 +11,7 @@ from typing import Any, TypeVar
 from rich.console import Console
 
 # Define version here directly
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Type variable for generic context and parameter types
 T = TypeVar("T")
