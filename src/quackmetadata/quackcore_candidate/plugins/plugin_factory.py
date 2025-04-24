@@ -1,4 +1,4 @@
-# src/quackmetadata/plugins/plugin_factory.py
+# src/quackmetadata/quackcore_candidate/plugins/plugin_factory.py
 """
 Plugin factory module for QuackMetadata.
 
@@ -10,7 +10,7 @@ from typing import cast
 
 from quackcore.logging import get_logger
 
-from quackmetadata.plugins.metadata import MetadataPlugin
+from quackmetadata.plugin import MetadataPlugin
 from quackmetadata.protocols import QuackToolPluginProtocol
 
 logger = get_logger(__name__)

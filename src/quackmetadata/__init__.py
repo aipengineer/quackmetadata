@@ -1,35 +1,36 @@
 # src/quackmetadata/__init__.py
 """
-Initialization module for QuackMetadata.
+QuackMetadata: Extract structured metadata from text documents using LLMs.
 
-This module handles environment setup and other initialization tasks
-that should be performed when the application starts.
+This module provides functionality for extracting metadata from text files,
+validating against schemas, and integrating with Google Drive.
 """
 
 import logging
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+# Import core functionality
+from quackmetadata.schemas import AuthorProfile, Metadata
+from quackmetadata.tool import extract_metadata, process_file, run
 
-# Import lazily-loaded modules directly
-from quackmetadata.config import get_config, get_logger
-from quackmetadata.plugins.metadata import MetadataPlugin
-from quackmetadata.schemas.metadata import AuthorProfile, Metadata
-
-# Import version directly - this is a simple import that won't cause circular dependencies
+# Import version
 from quackmetadata.version import __version__
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 # Define what this package exposes
 __all__ = [
     # Version
     "__version__",
-    # Config
-    "get_config",
-    "get_logger",
-    # Metadata functionality
-    "MetadataPlugin",
+    # Core functionality
+    "extract_metadata",
+    "process_file",
+    "run",
+    # Data models
     "Metadata",
     "AuthorProfile",
+    # Initialization
     "initialize",
 ]
 
@@ -48,6 +49,4 @@ def ensure_directories() -> None:
 def initialize() -> None:
     """Initialize QuackMetadata application."""
     ensure_directories()
-
-    # Let QuackCore handle environment variables when its APIs are called
     logger.debug("QuackMetadata initialized")

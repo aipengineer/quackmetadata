@@ -94,7 +94,7 @@ quackmetadata metadata extract file.txt --verbose
 ### Python API
 
 ```python
-from quackmetadata.plugins.metadata import MetadataPlugin
+from quackmetadata.plugin import MetadataPlugin
 
 # Create and initialize the plugin
 plugin = MetadataPlugin()
@@ -102,22 +102,22 @@ plugin.initialize()
 
 # Process a file
 result = plugin.process_file(
-   file_path="path/to/file.txt",
-   output_path="path/to/output.metadata.json",
-   options={
-      "prompt_template": "path/to/custom.mustache",
-      "retries": 3,
-      "dry_run": False,
-      "verbose": True
-   }
+    file_path="path/to/file.txt",
+    output_path="path/to/output.metadata.json",
+    options={
+        "prompt_template": "path/to/custom.mustache",
+        "retries": 3,
+        "dry_run": False,
+        "verbose": True
+    }
 )
 
 if result.success:
-   # Access the extracted metadata
-   metadata = result.content.get("metadata")
-   print(metadata)
+    # Access the extracted metadata
+    metadata = result.content.get("metadata")
+    print(metadata)
 else:
-   print(f"Error: {result.error}")
+    print(f"Error: {result.error}")
 ```
 
 ## 📝 Metadata Schema

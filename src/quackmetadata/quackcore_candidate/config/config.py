@@ -1,4 +1,4 @@
-# src/quackmetadata/config.py
+# src/quackmetadata/quackcore_candidate/config/config.py
 """
 Configuration management for QuackMetadata.
 

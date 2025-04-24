@@ -36,29 +36,15 @@ def render_prompt(template_path: str, context: Mapping[str, str]) -> str:
         ValueError: If the template is invalid or context is missing required values.
     """
     try:
-        # Check if template_path is a string representation of a PathResult
-        if isinstance(template_path, str) and template_path.startswith("success="):
-            logger.warning(
-                "Detected template_path as string representation of PathResult")
-            # Extract the actual path using regex
-            import re
-            path_match = re.search(r"path=PosixPath\('([^']+)'\)", template_path)
-            if path_match:
-                template_path_str = path_match.group(1)
-                logger.debug(f"Extracted path: {template_path_str}")
-            else:
-                # Use as is if we can't extract the path
-                template_path_str = template_path
-        else:
-            # Normalize and convert path to string.
-            template_path_str = str(template_path)
+        # Normalize and convert path to string
+        template_path_str = str(template_path)
 
-        # Use FS to check if the file exists.
+        # Use FS to check if the file exists
         file_info = fs.get_file_info(template_path_str)
         if not file_info.success or not file_info.exists:
             raise FileNotFoundError(f"Template file not found: {template_path_str}")
 
-        # Read the file using FS.
+        # Read the file using FS
         read_result = fs.read_text(template_path_str, encoding="utf-8")
         if not read_result.success:
             raise FileNotFoundError(
@@ -71,7 +57,7 @@ def render_prompt(template_path: str, context: Mapping[str, str]) -> str:
         return rendered
 
     except FileNotFoundError as e:
-        logger.error(f"Template file not found: {template_path_str}")
+        logger.error(f"Template file not found: {e}")
 
         # Provide a default template when the file is not found
         default_template = """
@@ -93,8 +79,17 @@ def render_prompt(template_path: str, context: Mapping[str, str]) -> str:
           "domain": "The subject domain or category",
           "tone": "The writing tone (formal, informal, academic, etc.)",
           "summary": "A brief summary of the content (2-3 sentences)",
-          "keywords": ["keyword1", "keyword2", "keyword3", "etc"],
-          "rarity": "common|uncommon|rare|legendary"
+          "author_style": "Style of writing (e.g., concise, academic, poetic)",
+          "language": "Primary language of the document",
+          "estimated_date": null,
+          "rarity": "🟢 Common",
+          "author_profile": {
+            "name": "Author's name (if detectable or inferred)",
+            "profession": "Author's profession or occupation",
+            "writing_style": "Characteristic writing style",
+            "possible_age_range": "Estimated age range of the author",
+            "location_guess": "Possible geographic location of the author"
+          }
         }
         ```
 
@@ -127,13 +122,28 @@ def get_template_path(template_name: str, category: str = "metadata") -> str:
     Returns:
         A string path to the template file.
     """
-    # Try to find templates in package resources.
+    # Try to find templates in standard locations
+    candidates = [
+        f"prompts/{category}/{template_name}.mustache",
+        f"./prompts/{category}/{template_name}.mustache",
+    ]
+
+    # Use the Paths service to resolve candidate paths relative to the project root
+    for candidate in candidates:
+        candidate_path = paths.resolve_project_path(candidate)
+        # Convert the result to string
+        candidate_str = str(candidate_path)
+        file_info = fs.get_file_info(candidate_str)
+        if file_info.success and file_info.exists:
+            return candidate_str
+
+    # As a last resort, build a fallback path
     try:
         from importlib import resources
 
+        # Try to use importlib.resources to find the template
         try:
-            # First try with quacktool.prompts
-            with resources.files(f"quacktool.prompts.{category}") as pkg_path:
+            with resources.files(f"quackmetadata.prompts.{category}") as pkg_path:
                 template_path = pkg_path / f"{template_name}.mustache"
                 # Convert PosixPath to string before using it
                 template_path_str = str(template_path)
@@ -141,37 +151,12 @@ def get_template_path(template_name: str, category: str = "metadata") -> str:
                 if file_info.success and file_info.exists:
                     return template_path_str
         except (ImportError, ModuleNotFoundError, TypeError):
-            # Then try with quackmetadata.prompts
-            try:
-                with resources.files(f"quackmetadata.prompts.{category}") as pkg_path:
-                    template_path = pkg_path / f"{template_name}.mustache"
-                    # Convert PosixPath to string before using it
-                    template_path_str = str(template_path)
-                    file_info = fs.get_file_info(template_path_str)
-                    if file_info.success and file_info.exists:
-                        return template_path_str
-            except (ImportError, ModuleNotFoundError, TypeError):
-                pass
-    except (ImportError, ModuleNotFoundError, TypeError):
+            pass
+
+    except (ImportError, ModuleNotFoundError):
         pass
 
-    # Fallback: Attempt to resolve template path relative to project structure.
-    fallback_candidates = [
-        f"prompts/{category}/{template_name}.mustache",
-        f"./prompts/{category}/{template_name}.mustache",
-    ]
-    for candidate in fallback_candidates:
-        # Use the Paths to resolve candidate paths relative to the project root.
-        candidate_path = paths.resolve_project_path(candidate)
-        # Convert the result to string
-        candidate_str = str(candidate_path.path) if hasattr(candidate_path,
-                                                            "path") else str(
-            candidate_path)
-        file_info = fs.get_file_info(candidate_str)
-        if file_info.success and file_info.exists:
-            return candidate_str
-
-    # As a last resort, manually build a fallback path using the current module's directory.
+    # Fallback to using the current module's directory
     current_file = Path(__file__)
     current_dir = current_file.parent
     default_path = str(
@@ -180,14 +165,5 @@ def get_template_path(template_name: str, category: str = "metadata") -> str:
     logger.warning(
         f"Could not find template: {template_name}. Using fallback path: {default_path}"
     )
-
-    # Normalize the default_path to ensure it's clean
-    # This is important because this path will be passed to render_prompt
-    try:
-        path_result = fs.normalize_path(default_path)
-        if path_result.success:
-            default_path = str(path_result.path)
-    except Exception as e:
-        logger.warning(f"Could not normalize default path: {e}")
 
     return default_path

@@ -1,4 +1,4 @@
-# src/quackmetadata/schemas/metadata.py
+# src/quackmetadata/schemas.py
 """
 Metadata schema definitions for QuackMetadata.
 

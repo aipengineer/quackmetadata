@@ -1,4 +1,4 @@
-# src/quackmetadata/commands/metadata_cli.py
+# src/quackmetadata/quackcore_candidate/cli/tool_cli.py
 """
 Command-line interface for the QuackMetadata tool.
 
@@ -19,7 +19,7 @@ from quackcore.cli import (
 from quackcore.fs.service import get_service
 from quackcore.logging import get_logger
 
-from quackmetadata.plugins.metadata import MetadataPlugin
+from quackmetadata.plugin import MetadataPlugin
 
 fs = get_service()
 

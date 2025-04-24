@@ -1,0 +1,45 @@
+id: quackmetadata
+title: Extract metadata from text files using LLMs
+description: |
+  Learn how to build a tool that extracts structured metadata from text files using 
+  language models. This tutorial covers prompt engineering, metadata extraction, 
+  schema validation, and integration with Google Drive.
+
+tags: [llm, metadata, extraction, openai, pydantic]
+xp_total: 500
+
+chapters:
+  - id: 01-setup
+    title: Setup and project structure
+    file: tool.py
+    lines: [0, 40]
+    xp: 50
+    badge: "🏗️ Project Architect"
+
+  - id: 02-prompt-engineering
+    title: Creating effective prompts for metadata extraction
+    file: tool.py
+    lines: [41, 150]
+    xp: 100
+    badge: "🧠 Prompt Engineer"
+
+  - id: 03-extract-metadata
+    title: Using LLMs to extract structured metadata
+    file: tool.py
+    lines: [151, 250]
+    xp: 150
+    badge: "🔍 Metadata Miner"
+
+  - id: 04-process-files
+    title: Processing files and handling different sources
+    file: tool.py
+    lines: [251, 300]
+    xp: 100
+    badge: "📄 File Wizard"
+
+  - id: 05-drive-integration
+    title: Integration with Google Drive
+    file: integrations/drive_handler.py
+    lines: [0, 100]
+    xp: 100
+    badge: "☁️ Cloud Connector"
